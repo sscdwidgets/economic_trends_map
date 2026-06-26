@@ -82,9 +82,23 @@
   .grid{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;}
   .map-card{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);padding:8px;position:relative;}
   svg.usmap{width:100%;height:auto;display:block;}
-  svg.usmap path{stroke:#fff;stroke-width:1;cursor:pointer;transition:opacity .12s, fill .35s ease;}
+  svg.usmap path{stroke:#fff;stroke-width:1;cursor:pointer;transition:opacity .2s ease, fill .35s ease;}
   svg.usmap path:hover{opacity:.78;}
-  svg.usmap path.sel{stroke:var(--ink);stroke-width:2;}
+  /* Selection: when a state is chosen, dim the rest and keep the selected one
+     at full strength with a crisp white outline so it reads on any fill color. */
+  /* Selection: keep the rest of the map readable (only a gentle desaturate/dim)
+     and make the selected state pop via a bold navy outline + white inner ring,
+     which reads on any fill without washing out the rest of the choropleth. */
+  svg.usmap.has-selection path{opacity:.7;}
+  svg.usmap.has-selection path.sel{
+    opacity:1;
+    stroke:var(--navy);
+    stroke-width:2.5;
+    paint-order:stroke;
+    filter:drop-shadow(0 0 1px #fff) drop-shadow(0 1px 3px rgba(0,45,114,.45));
+  }
+  svg.usmap.has-selection path:hover{opacity:.9;}
+  svg.usmap.has-selection path.sel:hover{opacity:1;}
 
   /* loading skeleton: whole map breathes navy<->gold while data is in flight.
      Paths get a staggered delay so it reads as a gentle wave, not a flat blink. */
@@ -364,7 +378,13 @@
   }
 
   function markSelected(){
+    var svg=document.getElementById('usmap');
+    var has=!!state.selected && !!pathEls[state.selected];
+    if(svg) svg.classList.toggle('has-selection', has);
     Object.keys(pathEls).forEach(function(a){ pathEls[a].classList.toggle('sel', a===state.selected); });
+    // SVG paint order = DOM order; re-append the selected path so its outline
+    // draws on top of neighboring states instead of being overlapped by them.
+    if(has && svg){ svg.appendChild(pathEls[state.selected]); }
   }
 
   function fmtVal(v, metric){
