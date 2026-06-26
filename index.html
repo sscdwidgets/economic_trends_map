@@ -329,7 +329,17 @@
   function paint(){
     var d=state.data; if(!d) return;
     var vals=d.states.map(valOf).filter(function(v){return v!=null&&!isNaN(v);});
-    var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
+    var lo, hi;
+    if(state.mode==='change' && vals.length>4){
+      // Robust scale: bound by the 5th/95th percentile so a single extreme
+      // metro (e.g. a tiny-base permit swing) can't flatten everyone else.
+      var sorted=vals.slice().sort(function(a,b){return a-b;});
+      var q=function(p){var i=Math.min(sorted.length-1,Math.max(0,Math.round(p*(sorted.length-1))));return sorted[i];};
+      lo=q(0.05); hi=q(0.95);
+      if(lo===hi){ lo=Math.min.apply(null,vals); hi=Math.max.apply(null,vals); }
+    } else {
+      lo=Math.min.apply(null,vals); hi=Math.max.apply(null,vals);
+    }
     var byAbbr={}; d.states.forEach(function(s){byAbbr[s.abbr]=s;});
     MAP.paths.forEach(function(p){
       var s=byAbbr[p.abbr];
