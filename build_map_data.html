@@ -13,6 +13,7 @@
   button{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:12px 22px;font-size:15px;font-weight:600;cursor:pointer;}
   button:disabled{opacity:.5;cursor:default;}
   .dl{background:var(--pos);margin-left:10px;}
+  #retry{background:var(--gold);color:var(--navy);margin-left:10px;}
   .row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;font-family:ui-monospace,Menlo,monospace;border-bottom:1px solid var(--line);}
   .row .st{margin-left:auto;font-weight:600;}
   .ok{color:var(--pos);} .err{color:var(--neg);} .pend{color:var(--ink-3);}
@@ -26,6 +27,7 @@
   <p class="sub">Generates the static <code>data.json</code> for the Regional Economic Map. Click once, download the file, drop it on GitHub Pages next to the map. Re-run monthly to refresh.</p>
 
   <button id="go">Generate data.json</button>
+  <button id="retry" disabled>Retry failed</button>
   <button id="dl" class="dl" disabled>Download</button>
 
   <div id="log"></div>
@@ -39,12 +41,24 @@
   var WORKER="https://fred-proxy.jameswspence.workers.dev/snapshot";
   var METRICS=["hpi","unemp","income","permits"];
   var assembled=null;
+  var jobs=[];        // {m, half, id, done}
+  var running=false;
 
-  function fetchJSON(url){
-    function once(){return fetch(url,{mode:"cors",cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();});}
-    // up to 2 retries — this runs rarely, so be patient and thorough
-    return once().catch(function(){return new Promise(function(s){setTimeout(s,600);}).then(once);})
-                 .catch(function(){return new Promise(function(s){setTimeout(s,1200);}).then(once);});
+  // Robust fetch: up to 5 attempts with growing backoff and a generous per-attempt
+  // timeout. The heavier monthly halves (permits) can be slow on a cold Worker, so
+  // patience here is the whole point — this runs rarely.
+  function fetchJSON(url, attempt){
+    attempt = attempt||0;
+    var ctrl = (typeof AbortController!=="undefined") ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ctrl.abort();}, 25000) : null;  // 25s ceiling
+    return fetch(url,{mode:"cors",cache:"no-store",signal:ctrl?ctrl.signal:undefined})
+      .then(function(r){ if(timer)clearTimeout(timer); if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+      .catch(function(e){
+        if(timer)clearTimeout(timer);
+        if(attempt>=4) throw e;                         // 5 total tries
+        var wait = Math.min(6000, 700*Math.pow(2,attempt)); // 0.7s,1.4s,2.8s,5.6s
+        return new Promise(function(s){setTimeout(s,wait);}).then(function(){ return fetchJSON(url, attempt+1); });
+      });
   }
 
   function logRow(id,label){
@@ -54,44 +68,57 @@
   }
   function setRow(id,cls,txt){var s=document.getElementById("s-"+id);if(s){s.className="st "+cls;s.textContent=txt;}}
 
-  document.getElementById("go").addEventListener("click",function(){
-    var go=document.getElementById("go"); go.disabled=true;
-    document.getElementById("dl").disabled=true;
-    document.getElementById("log").innerHTML="";
-    assembled={generated:new Date().toISOString(), source:"FRED via snapshot", metrics:{}};
+  function runJobs(onlyFailed){
+    if(running) return; running=true;
+    var go=document.getElementById("go"), retry=document.getElementById("retry"), dl=document.getElementById("dl");
+    go.disabled=true; retry.disabled=true; dl.disabled=true;
 
-    // 8 calls: each metric, two halves. Sequential to be gentle on the Worker.
-    var jobs=[];
-    METRICS.forEach(function(m){ jobs.push({m:m,half:0}); jobs.push({m:m,half:1}); });
-    jobs.forEach(function(j){ logRow(j.m+"-"+j.half, j.m+" (half "+j.half+")"); });
+    if(!onlyFailed){
+      // fresh run
+      assembled={generated:new Date().toISOString(), source:"FRED via snapshot", metrics:{}};
+      jobs=[]; document.getElementById("log").innerHTML="";
+      METRICS.forEach(function(m){ [0,1].forEach(function(h){
+        var id=m+"-"+h; jobs.push({m:m,half:h,id:id,done:false}); logRow(id, m+" (half "+h+")");
+      });});
+    }
 
-    var i=0;
-    function next(){
-      if(i>=jobs.length){ finish(); return; }
-      var j=jobs[i]; var id=j.m+"-"+j.half;
+    var queue = jobs.filter(function(j){return !j.done;});
+    var k=0;
+    function step(){
+      if(k>=queue.length){ finish(); return; }
+      var j=queue[k]; setRow(j.id,"pend","working…");
       fetchJSON(WORKER+"?metric="+j.m+"&half="+j.half).then(function(d){
         if(!assembled.metrics[j.m]){ assembled.metrics[j.m]={label:d.label,unit:d.unit,frequency:d.frequency,source:d.source,states:[]}; }
+        // replace any prior partial for this half: drop states from this half then add fresh
+        // (halves don't overlap, so simple concat is fine on first success)
         assembled.metrics[j.m].states = assembled.metrics[j.m].states.concat(d.states||[]);
         var withData=(d.states||[]).filter(function(s){return s.value!=null;}).length;
-        setRow(id,"ok",withData+"/"+(d.states||[]).length+" ✓");
+        setRow(j.id,"ok",withData+"/"+(d.states||[]).length+" ✓");
+        j.done=true;
       }).catch(function(e){
-        setRow(id,"err","failed");
-        assembled._errors=(assembled._errors||[]); assembled._errors.push(id+": "+e.message);
-      }).then(function(){ i++; setTimeout(next,250); });
+        setRow(j.id,"err","failed — will retry");
+      }).then(function(){ k++; setTimeout(step,300); });
     }
-    next();
+    // warm up the Worker first (one cheap call) so the first real call isn't cold
+    fetchJSON(WORKER+"?metric=hpi&half=0").catch(function(){}).then(step);
 
     function finish(){
-      go.disabled=false;
-      // sanity summary
-      var summary=document.createElement("div"); summary.className="row";
+      running=false;
+      var failed=jobs.filter(function(j){return !j.done;});
       var total=0,withData=0;
       METRICS.forEach(function(m){ var s=(assembled.metrics[m]&&assembled.metrics[m].states)||[]; total+=s.length; withData+=s.filter(function(x){return x.value!=null;}).length; });
-      summary.innerHTML='<span><b>Total</b></span><span class="st '+(assembled._errors?"err":"ok")+'">'+withData+'/'+total+' values'+(assembled._errors?' · '+assembled._errors.length+' errors':'')+'</span>';
-      document.getElementById("log").appendChild(summary);
-      document.getElementById("dl").disabled=false;
+      var sum=document.getElementById("summary")||document.createElement("div");
+      sum.id="summary"; sum.className="row";
+      sum.innerHTML='<span><b>Total</b></span><span class="st '+(failed.length?"err":"ok")+'">'+withData+'/'+total+' values'+(failed.length?(' · '+failed.length+' halves still failing'):' · complete')+'</span>';
+      if(!document.getElementById("summary")) document.getElementById("log").appendChild(sum);
+      go.disabled=false;
+      retry.disabled = failed.length===0;
+      dl.disabled = false;   // allow download even if partial (map handles gaps)
     }
-  });
+  }
+
+  document.getElementById("go").addEventListener("click",function(){ runJobs(false); });
+  document.getElementById("retry").addEventListener("click",function(){ runJobs(true); });
 
   document.getElementById("dl").addEventListener("click",function(){
     if(!assembled) return;
