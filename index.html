@@ -60,6 +60,8 @@
   .chip.live .dot{background:var(--pos);animation:pulse 2s infinite;}
   .chip.sample{background:var(--warn-bg);color:var(--warn);border-color:#F2D9B0;}
   .chip.sample .dot{background:var(--warn);}
+  .chip.loading{background:#EEF1F6;color:var(--ink-3);border-color:var(--line);}
+  .chip.loading .dot{background:var(--ink-3);animation:pulse 1s infinite;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
 
   /* controls */
@@ -80,9 +82,27 @@
   .grid{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;}
   .map-card{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);padding:8px;position:relative;}
   svg.usmap{width:100%;height:auto;display:block;}
-  svg.usmap path{stroke:#fff;stroke-width:1;cursor:pointer;transition:opacity .12s;}
+  svg.usmap path{stroke:#fff;stroke-width:1;cursor:pointer;transition:opacity .12s, fill .35s ease;}
   svg.usmap path:hover{opacity:.78;}
   svg.usmap path.sel{stroke:var(--ink);stroke-width:2;}
+
+  /* loading skeleton: whole map breathes navy<->gold while data is in flight.
+     Paths get a staggered delay so it reads as a gentle wave, not a flat blink. */
+  svg.usmap.loading path{
+    animation:mapBreathe 1.6s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes mapBreathe{
+    0%,100%{ fill:#E3E9F4; }   /* pale navy */
+    50%    { fill:#FBE6B0; }   /* pale gold */
+  }
+  .map-card.loading::after{
+    content:"Loading state data\2026";
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--navy);background:rgba(255,255,255,.82);padding:7px 14px;border-radius:100px;
+    box-shadow:0 1px 6px rgba(0,45,114,.12);pointer-events:none;
+  }
 
   /* legend */
   .legend{display:flex;align-items:center;gap:10px;padding:10px 12px 4px;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);}
@@ -153,7 +173,7 @@
     </div>
     <div class="head-right">
       <div class="stamp"><div id="stamp-date">Loading…</div></div>
-      <span class="chip sample" id="src-badge"><span class="dot"></span>Sample data</span>
+      <span class="chip loading" id="src-badge"><span class="dot"></span>Loading…</span>
     </div>
   </header>
 
@@ -265,12 +285,14 @@
   var svg=document.getElementById('usmap');
   svg.setAttribute('viewBox', MAP.viewBox);
   var pathEls={};
-  MAP.paths.forEach(function(p){
+  MAP.paths.forEach(function(p,idx){
     var el=document.createElementNS('http://www.w3.org/2000/svg','path');
     el.setAttribute('d',p.d);
     el.setAttribute('fill','#e8ebf0');
     el.setAttribute('data-abbr',p.abbr);
     el.setAttribute('tabindex','0');
+    // stagger the breathing animation left-ish to right so it reads as a wave
+    el.style.animationDelay=((idx%17)*0.06)+'s';
     el.addEventListener('click',function(){ select(p.abbr); });
     el.addEventListener('keypress',function(e){ if(e.key==='Enter') select(p.abbr); });
     el.addEventListener('mouseenter',function(){ if(state.data) preview(p.abbr); });
@@ -448,6 +470,9 @@
       syncMetricTabs();
       document.getElementById('state-view').style.display = state.geo==='state'?'':'none';
       document.getElementById('msa-view').style.display   = state.geo==='msa'?'':'none';
+      // Level/change toggle only applies to the map (single fill); the metro table
+      // shows both value and YoY columns at once, so the toggle is redundant there.
+      document.getElementById('mode-seg').style.display = state.geo==='state'?'':'none';
       loadCurrent();
     });
   });
@@ -466,6 +491,11 @@
   });
 
   // ---- badge ----
+  function setBadgeLoading(){
+    var b=document.getElementById('src-badge');
+    b.className='chip loading';
+    b.innerHTML='<span class="dot"></span>Loading…';
+  }
   function setBadge(isSample,reason){
     var b=document.getElementById('src-badge');
     b.className='chip '+(isSample?'sample':'live');
@@ -480,7 +510,15 @@
   function loadCurrent(){ if(state.geo==='state') loadState(); else loadMsa(); }
 
   // ---- STATE load ----
+  function setMapLoading(on){
+    var svg=document.getElementById('usmap');
+    var card=svg&&svg.closest('.map-card');
+    if(svg) svg.classList.toggle('loading',on);
+    if(card) card.classList.toggle('loading',on);
+  }
   function loadState(){
+    setMapLoading(true);
+    setBadgeLoading();
     // The Worker paginates states (free-plan subrequest cap), so fetch chunk 0 first
     // to learn total_chunks, then fetch the rest and stitch them into one states[].
     var base=WORKER+'?metric='+state.metric+'&start=2015-01-01';
@@ -506,6 +544,7 @@
       .catch(function(e){ state.data=sampleFor(state.metric); setBadge(true,(e&&e.message)||'fetch failed'); afterLoad(); });
   }
   function afterLoad(){
+    setMapLoading(false);
     var d=state.data;
     document.getElementById('stamp-date').textContent='As of '+new Date(d.generated||Date.now()).toLocaleDateString('en-US',{month:'short',year:'numeric'});
     paint();
@@ -521,6 +560,7 @@
 
   // ---- MSA load + render ----
   function loadMsa(){
+    setBadgeLoading();
     document.getElementById('msa-body').innerHTML='<tr><td colspan="3" class="msa-empty">Loading metros…</td></tr>';
     var url=WORKER_MSA+'?metric='+state.metric;
     fetch(url,{mode:'cors'})
