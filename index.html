@@ -481,9 +481,27 @@
 
   // ---- STATE load ----
   function loadState(){
-    var url=WORKER+'?metric='+state.metric+'&start=2015-01-01';
-    fetch(url,{mode:'cors'})
+    // The Worker paginates states (free-plan subrequest cap), so fetch chunk 0 first
+    // to learn total_chunks, then fetch the rest and stitch them into one states[].
+    var base=WORKER+'?metric='+state.metric+'&start=2015-01-01';
+    fetch(base+'&chunk=0',{mode:'cors'})
       .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(first){
+        var total=first.total_chunks||1;
+        if(total<=1){ return first; }
+        var rest=[];
+        for(var i=1;i<total;i++){
+          rest.push(fetch(base+'&chunk='+i,{mode:'cors'}).then(function(r){
+            if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
+          }));
+        }
+        return Promise.all(rest).then(function(parts){
+          var merged=first.states.slice();
+          parts.forEach(function(p){ merged=merged.concat(p.states||[]); });
+          first.states=merged;
+          return first;
+        });
+      })
       .then(function(d){ state.data=d; setBadge(false); afterLoad(); })
       .catch(function(e){ state.data=sampleFor(state.metric); setBadge(true,(e&&e.message)||'fetch failed'); afterLoad(); });
   }
