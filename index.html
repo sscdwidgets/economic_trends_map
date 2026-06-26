@@ -158,6 +158,7 @@
   .msa-table tbody tr:hover{background:var(--panel);}
   .msa-table td.region{font-weight:500;color:var(--ink);}
   .msa-table td.num{text-align:right;font-family:var(--mono);color:var(--ink-2);}
+  .msa-table .asof-cell{display:block;font-size:9px;color:var(--ink-3);font-weight:400;margin-top:1px;}
   .msa-table td.yoy.up{color:var(--pos);} .msa-table td.yoy.down{color:var(--neg);}
   .msa-empty{padding:28px 16px;text-align:center;color:var(--ink-3);font-size:13px;}
 </style>
@@ -572,7 +573,9 @@
     var d=state.msa.data;
     document.getElementById('stamp-date').textContent='As of '+(d.as_of||new Date().toISOString().slice(0,7));
     var note=document.getElementById('msa-note');
-    note.textContent = 'Top 20 metros · unemployment & permits only. House prices are state-level (FHFA metro data uses divisions + lags).';
+    note.textContent = state.metric==='permits'
+      ? 'Top 20 metros. Census permit data lags and updates at different rates per metro — each row shows its latest available month. House prices are state-level only.'
+      : 'Top 20 metros · unemployment & permits only. House prices are state-level (FHFA metro data uses divisions + lags).';
     setTimeout(postHeight,60);
   }
   function renderMsa(){
@@ -602,13 +605,18 @@
     var html='';
     rows.forEach(function(r){
       var val=fmtVal(r.value,state.metric);
+      var dt='';
+      if(r.date){
+        var pd=new Date(r.date+'T00:00:00');
+        dt='<span class="asof-cell">'+pd.toLocaleDateString('en-US',{month:'short',year:'numeric'})+'</span>';
+      }
       var yoyTxt='—', yoyCls='';
       if(r.yoy!=null&&!isNaN(r.yoy)){
         var up=r.yoy>=0; var good=INVERTED[state.metric]?!up:up;
         yoyCls=good?'up':'down'; yoyTxt=(up?'▲ ':'▼ ')+Math.abs(r.yoy).toFixed(1)+'%';
       }
       html+='<tr><td class="region">'+r.region+'</td>'+
-            '<td class="num">'+val+'</td>'+
+            '<td class="num">'+val+dt+'</td>'+
             '<td class="num yoy '+yoyCls+'">'+yoyTxt+'</td></tr>';
     });
     body.innerHTML=html;
@@ -643,7 +651,13 @@
       metros:metros.map(function(name,i){
         var r=seed(name+metric); var v=base[0]+(base[1]-base[0])*r;
         var yoy=(r-0.5)*(metric==='unemp'?3.5:metric==='permits'?28:11);
-        return {region:name,code:String(i),value:Math.round(v),yoy:yoy};
+        // sample dates: unemployment is current; permits lag at varied rates per metro
+        var dt;
+        if(metric==='permits'){
+          var lag=Math.floor(r*10); // 0–9 months of lag, varies by metro
+          var dd=new Date(2026,3-lag,1); dt=dd.toISOString().slice(0,10);
+        } else { dt='2026-04-01'; }
+        return {region:name,code:String(i),value:Math.round(v),yoy:yoy,date:dt};
       })};
   }
 
