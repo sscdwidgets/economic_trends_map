@@ -79,7 +79,7 @@
   .seg button+button{border-left:1px solid var(--line);}
 
   /* layout: map + side panel */
-  .grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;align-items:start;}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;align-items:stretch;}
   .map-card{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);padding:14px;position:relative;box-shadow:0 2px 14px rgba(0,45,114,.06);}
   svg.usmap{width:100%;height:auto;display:block;}
   svg.usmap path{stroke:#fff;stroke-width:1;cursor:pointer;transition:opacity .2s ease, fill .35s ease;}
@@ -126,20 +126,14 @@
   .legend .ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);padding:2px 12px 8px;}
 
   /* side panel */
-  .side{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);padding:18px;position:sticky;top:12px;}
+  .side{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;}
   .side .st-name{font-size:15px;font-weight:600;color:var(--ink);margin:0 0 2px;letter-spacing:-.01em;}
   .side .st-metric{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px;}
   .side .st-val{font-size:32px;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-.02em;}
   .side .st-yoy{font-family:var(--mono);font-size:13px;font-weight:500;margin-top:8px;}
   .side .st-yoy.up{color:var(--pos);} .side .st-yoy.down{color:var(--neg);}
   .side .st-spark{height:50px;margin-top:16px;}
-  .side .st-hint{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:14px;border-top:1px solid var(--line);padding-top:12px;line-height:1.5;}
-  .rank{margin-top:14px;}
-  .rank h4{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px;font-weight:600;}
-  .rank ul{list-style:none;margin:0;padding:0;}
-  .rank li{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;padding:4px 0;border-bottom:1px solid var(--line);cursor:pointer;}
-  .rank li:hover{color:var(--navy);}
-  .rank li .v{color:var(--ink-2);}
+  .side .st-hint{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.5;}
 
   /* movers strip */
   .movers{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
@@ -152,30 +146,24 @@
   .mv-col li:hover{color:var(--navy);}
   .mv-col li .v{font-family:var(--mono);font-size:12px;font-weight:500;}
   .mv-up li .v{color:var(--pos);} .mv-down li .v{color:var(--neg);}
+  /* Inverted metrics (unemployment): high/rising is bad (red), low/falling is good (green) */
+  .movers.inv .mv-up h5, .movers.inv .mv-up li .v{color:var(--neg);}
+  .movers.inv .mv-down h5, .movers.inv .mv-down li .v{color:var(--pos);}
   .mv-col li .nm{font-weight:500;color:var(--ink);}
   .mv-col li:hover .nm{color:var(--navy);}
 
-  /* viz cards (ranked bars + scatter) */
+  /* viz card (scatter) */
   .viz-card{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-top:2px;}
   .viz-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
     font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600;}
   .viz-sub{font-weight:400;text-transform:none;letter-spacing:0;}
 
-  /* ranked horizontal bars */
-  .bars{display:flex;flex-direction:column;gap:3px;max-height:560px;overflow-y:auto;}
-  .bar-row{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:3px 4px;border-radius:5px;cursor:pointer;transition:background .12s;}
-  .bar-row:hover{background:var(--panel);}
-  .bar-row.sel{background:#EAF0FB;}
-  .bar-row .lab{font-family:var(--mono);font-size:11px;color:var(--ink-2);font-weight:500;}
-  .bar-row .track{height:18px;background:var(--panel);border-radius:4px;overflow:hidden;position:relative;}
-  .bar-row .fill{height:100%;border-radius:4px;min-width:2px;transition:width .4s ease;}
-  .bar-row .val{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-weight:500;text-align:right;min-width:64px;font-feature-settings:'tnum' 1;}
-  .bars::-webkit-scrollbar{width:8px;} .bars::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px;}
+
 
   /* scatter */
-  .scatter-picks{display:inline-flex;gap:12px;text-transform:none;letter-spacing:0;font-weight:400;}
-  .scatter-picks label{display:inline-flex;align-items:center;gap:5px;color:var(--ink-3);}
-  .scatter-picks select{font-family:var(--ui);font-size:11px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;color:var(--ink);background:var(--canvas);cursor:pointer;}
+  .scatter-picks{display:inline-flex;align-items:center;gap:14px;font-family:var(--ui);font-size:12px;text-transform:none;letter-spacing:0;font-weight:400;}
+  .scatter-picks label{display:inline-flex;align-items:center;gap:6px;color:var(--ink-3);font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;}
+  .scatter-picks select{font-family:var(--ui);font-size:12px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:var(--canvas);cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;}
   .scatter-box{height:380px;position:relative;}
   .scatter-legend{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:10px;line-height:1.5;}
 
@@ -201,33 +189,6 @@
   }
   @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 
-  /* geography toggle */
-  .geo-toggle{margin-bottom:14px;}
-  /* MSA table view */
-  .msa-bar{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap;}
-  #msa-search{font-family:var(--ui);font-size:14px;padding:9px 13px;border:1px solid var(--line);border-radius:6px;
-    width:320px;max-width:100%;color:var(--ink);outline:none;}
-  #msa-search:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(9,96,187,.12);}
-  .msa-count{font-family:var(--mono);font-size:11px;color:var(--ink-3);}
-  .msa-note{font-family:var(--mono);font-size:10.5px;color:var(--warn);}
-  .msa-table-wrap{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;}
-  .msa-table{width:100%;border-collapse:collapse;font-size:13px;}
-  .msa-table thead th{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
-    color:var(--ink-3);text-align:left;padding:11px 16px;background:var(--panel);border-bottom:1px solid var(--line);
-    cursor:default;white-space:nowrap;}
-  .msa-table th.num{text-align:right;}
-  .msa-table th.sortable{cursor:pointer;user-select:none;}
-  .msa-table th.sortable:hover{color:var(--ink-2);}
-  .msa-table th.sortable.asc::after{content:" ▲";font-size:8px;}
-  .msa-table th.sortable.desc::after{content:" ▼";font-size:8px;}
-  .msa-table tbody td{padding:10px 16px;border-bottom:1px solid var(--line);font-feature-settings:'tnum' 1;}
-  .msa-table tbody tr:last-child td{border-bottom:none;}
-  .msa-table tbody tr:hover{background:var(--panel);}
-  .msa-table td.region{font-weight:500;color:var(--ink);}
-  .msa-table td.num{text-align:right;font-family:var(--mono);color:var(--ink-2);}
-  .msa-table .asof-cell{display:block;font-size:9px;color:var(--ink-3);font-weight:400;margin-top:1px;}
-  .msa-table td.yoy.up{color:var(--pos);} .msa-table td.yoy.down{color:var(--neg);}
-  .msa-empty{padding:28px 16px;text-align:center;color:var(--ink-3);font-size:13px;}
 </style>
 </head>
 <body>
@@ -245,13 +206,6 @@
     </div>
   </header>
 
-  <div class="geo-toggle">
-    <div class="seg" id="geo-seg" role="tablist">
-      <button data-geo="state" aria-selected="true">States</button>
-      <button data-geo="msa" aria-selected="false">Metro areas</button>
-    </div>
-  </div>
-
   <div class="controls">
     <div class="metric-tabs" id="metric-tabs" role="tablist">
       <button class="mtab" role="tab" data-metric="hpi" aria-selected="true">House Prices</button>
@@ -263,9 +217,12 @@
       <button data-mode="level" aria-selected="true">Level</button>
       <button data-mode="change" aria-selected="false">1-yr change</button>
     </div>
+    <span class="scatter-picks" id="scatter-picks" style="display:none">
+      <label>X <select id="sc-x"></select></label>
+      <label>Y <select id="sc-y"></select></label>
+    </span>
     <div class="seg" id="viz-seg" role="tablist" title="Choose how to view the state data">
       <button data-viz="map" aria-selected="true">Map</button>
-      <button data-viz="bars" aria-selected="false">Ranked</button>
       <button data-viz="scatter" aria-selected="false">Scatter</button>
     </div>
   </div>
@@ -282,8 +239,7 @@
     </div>
   </div>
 
-  <!-- STATE VIEW -->
-  <div class="grid" id="state-view">
+  <div class="grid">
     <div>
       <div class="map-card" id="map-card-wrap">
         <svg class="usmap" id="usmap" role="img" aria-label="US state choropleth"></svg>
@@ -291,20 +247,10 @@
       <div class="ticks legend" style="display:none"></div>
       <div class="legend" id="map-legend"><span id="leg-lo">—</span><span class="bar" id="leg-bar"></span><span id="leg-hi">—</span></div>
 
-      <!-- RANKED BAR view -->
-      <div class="viz-card" id="bars-wrap" style="display:none">
-        <div class="viz-head"><span id="bars-title">All states</span><span class="viz-sub" id="bars-sub"></span></div>
-        <div id="bars-list" class="bars"></div>
-      </div>
-
       <!-- SCATTER view -->
       <div class="viz-card" id="scatter-wrap" style="display:none">
         <div class="viz-head">
           <span>Two-metric view</span>
-          <span class="scatter-picks">
-            <label>X <select id="sc-x"></select></label>
-            <label>Y <select id="sc-y"></select></label>
-          </span>
         </div>
         <div class="scatter-box"><canvas id="scatter-canvas"></canvas></div>
         <div class="scatter-legend" id="sc-quad-note"></div>
@@ -323,39 +269,13 @@
         <div id="scorecard-rows"></div>
       </div>
 
-      <div class="rank">
-        <h4 id="rank-title">Highest</h4>
-        <ul id="rank-list"></ul>
-      </div>
       <div class="st-hint" id="st-hint">Click any state to inspect. National aggregates from FRED; state-level economic context, not property-level CRE values.</div>
     </aside>
   </div>
 
-  <!-- METRO VIEW -->
-  <div id="msa-view" style="display:none">
-    <div class="msa-bar">
-      <input type="search" id="msa-search" placeholder="Search metros (e.g. Tampa, Dallas)…" autocomplete="off">
-      <span class="msa-count" id="msa-count"></span>
-      <span class="msa-note" id="msa-note"></span>
-    </div>
-    <div class="msa-table-wrap">
-      <table class="msa-table" id="msa-table">
-        <thead>
-          <tr>
-            <th class="sortable" data-sort="region">Metro area</th>
-            <th class="sortable num" data-sort="value">Value</th>
-            <th class="sortable num" data-sort="yoy">1-yr change</th>
-          </tr>
-        </thead>
-        <tbody id="msa-body"></tbody>
-      </table>
-    </div>
-  </div>
-
   <footer>
-    Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level.
-    Metro data: top 20 US metros, BLS unemployment + Census permits (individual series). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
-    <span class="build-tag">build 65 · live (GeoFRED)</span>
+    Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level. Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
+    <span class="build-tag">build 73 · live (GeoFRED)</span>
     <span class="build-tag" id="diag-tag" style="display:none"></span>
   </footer>
 </div>
@@ -386,12 +306,9 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
   // For these metrics, a HIGHER value is "good"/warm except unemployment (inverted).
   var INVERTED = {unemp:true};
 
-  var state = {geo:'state', metric:'hpi', mode:'level', viz:'map', data:null, selected:null,
+  var state = {metric:'hpi', mode:'level', viz:'map', data:null, selected:null,
                userPicked:false, _selMode:null,
-               reqId:0, scX:'income', scY:'hpi',
-               msa:{data:null, sort:'value', dir:'desc', q:''}};
-  // metrics available at MSA level (income excluded — discontinued for metros)
-  var MSA_OK = {unemp:true, permits:true};  // house prices are state-level only (FHFA metro = divisions + lag)
+               reqId:0, scX:'income', scY:'hpi'};
 
   // ---- iframe auto-height ----
   function postHeight(){
@@ -483,7 +400,6 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
     } else {
       bar.style.background='linear-gradient(90deg,#E02424,#EEF0F4,#0E9F6E)';
     }
-    renderRank(byAbbr);
     markSelected();
   }
 
@@ -552,92 +468,55 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
   function select(abbr){
     state.selected=abbr; state._selMetric=state.metric; state._selMode=state.mode; state.userPicked=true;
     showState(abbr,false); markSelected(); renderScorecard(abbr);
-    if(state.viz==='bars') renderBars();
-    else if(state.viz==='scatter' && scatterChart) scatterChart.update();
+    if(state.viz==='scatter' && scatterChart) scatterChart.update();
   }
 
-  function renderRank(byAbbr){
-    var arr=state.data.states.filter(function(s){return valOf(s)!=null&&!isNaN(valOf(s));});
-    var inv=(state.mode==='level'&&INVERTED[state.metric]);
-    arr.sort(function(a,b){return valOf(b)-valOf(a);});
-    if(inv) arr.reverse();
-    var top=arr.slice(0,6);
-    document.getElementById('rank-title').textContent =
-      state.mode==='change' ? 'Fastest rising' : (INVERTED[state.metric]?'Lowest (best)':'Highest');
-    var ul=document.getElementById('rank-list'); ul.innerHTML='';
-    top.forEach(function(s){
-      var name=(MAP.paths.find(function(p){return p.abbr===s.abbr;})||{}).name||s.abbr;
-      var li=document.createElement('li');
-      var v=state.mode==='change'?((s.yoy>=0?'+':'')+s.yoy.toFixed(1)+'%'):fmtVal(s.value,state.metric);
-      li.innerHTML='<span>'+name+'</span><span class="v">'+v+'</span>';
-      li.addEventListener('click',function(){select(s.abbr);});
-      ul.appendChild(li);
-    });
-  }
-
-  // ---- viz: ranked bars, scatter, movers, scorecard ----
+  // ---- viz: scatter, movers, scorecard ----
   function renderMovers(){
     var mv=document.getElementById('movers');
-    if(state.geo!=='state'){ mv.style.display='none'; return; }
     var d=state.data; if(!d){ mv.style.display='none'; return; }
-    var arr=d.states.filter(function(s){return s.yoy!=null&&!isNaN(s.yoy);});
+    var inv=INVERTED[state.metric];
+    var change=(state.mode==='change');
+    // Value the strip ranks by: YoY in change mode, the level value in level mode —
+    // so the strip mirrors whatever the map is colored for.
+    var key=function(s){ return change ? s.yoy : s.value; };
+    var arr=d.states.filter(function(s){ var v=key(s); return v!=null&&!isNaN(v); });
     if(arr.length<4){ mv.style.display='none'; return; }
     mv.style.display='';
-    var byYoy=arr.slice().sort(function(a,b){return b.yoy-a.yoy;});
-    var gainers=byYoy.slice(0,5);
-    var decliners=byYoy.slice(-5).reverse();
-    var inv=INVERTED[state.metric];
-    document.getElementById('mv-up-title').textContent = inv?'Rising fastest (watch)':'Biggest gainers';
-    document.getElementById('mv-down-title').textContent = inv?'Falling fastest (improving)':'Biggest decliners';
+    var sorted=arr.slice().sort(function(a,b){return key(b)-key(a);}); // high → low
+    var top=sorted.slice(0,3);
+    var bottom=sorted.slice(-3).reverse();
+
+    var upTitle, downTitle;
+    if(change){
+      upTitle = inv?'Rising fastest (watch)':'Biggest gainers';
+      downTitle = inv?'Falling fastest (improving)':'Biggest decliners';
+    } else {
+      // Level mode: ranking by absolute value. The number carries the meaning, so titles
+      // are descriptive; for unemployment add a cue since high = stressed, low = healthy.
+      upTitle = inv?'Highest (most stressed)':'Highest';
+      downTitle = inv?'Lowest (healthiest)':'Lowest';
+    }
+    document.getElementById('mv-up-title').textContent = upTitle;
+    document.getElementById('mv-down-title').textContent = downTitle;
+    // For inverted metrics (unemployment) the top column is the BAD direction
+    // (rising/highest = stressed → red) and the bottom is GOOD (falling/lowest =
+    // healthy → green). Flag the container so CSS flips the up/down colors.
+    mv.classList.toggle('inv', !!inv);
+
     function fill(listId, rows){
       var ul=document.getElementById(listId); ul.innerHTML='';
       rows.forEach(function(s){
         var name=(MAP.paths.find(function(p){return p.abbr===s.abbr;})||{}).name||s.abbr;
+        var disp = change ? ((s.yoy>=0?'+':'')+s.yoy.toFixed(1)+'%') : fmtVal(s.value, state.metric);
         var li=document.createElement('li');
-        li.innerHTML='<span class="nm">'+name+'</span><span class="v">'+(s.yoy>=0?'+':'')+s.yoy.toFixed(1)+'%</span>';
+        li.innerHTML='<span class="nm">'+name+'</span><span class="v">'+disp+'</span>';
         li.addEventListener('click',function(){ select(s.abbr); });
         ul.appendChild(li);
       });
     }
-    fill('mv-up-list', gainers);
-    fill('mv-down-list', decliners);
-  }
-
-  function renderBars(){
-    var d=state.data; if(!d) return;
-    var arr=d.states.filter(function(s){return valOf(s)!=null&&!isNaN(valOf(s));});
-    var inv=(state.mode==='level'&&INVERTED[state.metric]);
-    arr.sort(function(a,b){return valOf(b)-valOf(a);});
-    if(inv) arr.reverse();
-    document.getElementById('bars-title').textContent =
-      state.mode==='change' ? 'Ranked by 1-yr change' : (inv?'Ranked low → high (low is best)':'Ranked high → low');
-    document.getElementById('bars-sub').textContent = arr.length+' states';
-    var vals=arr.map(valOf);
-    var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
-    var box=document.getElementById('bars-list'); box.innerHTML='';
-    arr.forEach(function(s,i){
-      var v=valOf(s);
-      var name=(MAP.paths.find(function(p){return p.abbr===s.abbr;})||{}).name||s.abbr;
-      var row=document.createElement('div'); row.className='bar-row'+(s.abbr===state.selected?' sel':'');
-      var pct, col;
-      if(state.mode==='change'){
-        var mx=Math.max(Math.abs(lo),Math.abs(hi))||1;
-        pct=Math.abs(v)/mx*100;
-        var good = inv? v<0 : v>=0;
-        col = good?'var(--pos)':'var(--neg)';
-      } else {
-        pct = hi>lo ? (v-lo)/(hi-lo)*100 : 50;
-        pct = 8 + pct*0.92;
-        col = 'linear-gradient(90deg,#5B7FC7,#002D72)';
-      }
-      var vtxt = state.mode==='change' ? ((v>=0?'+':'')+v.toFixed(1)+'%') : fmtVal(v,state.metric);
-      row.innerHTML='<span class="lab">'+(i+1)+'. '+s.abbr+'</span>'+
-        '<span class="track"><span class="fill" style="width:'+pct.toFixed(1)+'%;background:'+col+'"></span></span>'+
-        '<span class="val">'+vtxt+'</span>';
-      row.title=name;
-      row.addEventListener('click',function(){ select(s.abbr); });
-      box.appendChild(row);
-    });
+    fill('mv-up-list', top);
+    fill('mv-down-list', bottom);
   }
 
   var scatterChart=null;
@@ -664,12 +543,38 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
       var xv=xByAbbr[p.abbr], yv=yByAbbr[p.abbr];
       if(xv==null||yv==null||isNaN(xv)||isNaN(yv)) return;
       if(pts.some(function(q){return q.abbr===p.abbr;})) return;
-      pts.push({x:xv,y:yv,abbr:p.abbr,name:p.name});
+      // keep true values (tx/ty) for tooltips and the average lines
+      pts.push({x:xv,y:yv,tx:xv,ty:yv,abbr:p.abbr,name:p.name});
     });
     if(!pts.length) return;
-    var xs=pts.map(function(p){return p.x;}), ys=pts.map(function(p){return p.y;});
+    var xs=pts.map(function(p){return p.tx;}), ys=pts.map(function(p){return p.ty;});
+    // Low-cardinality metrics like unemployment (rounded to 0.1%) put many states on
+    // the same X, forming rigid vertical columns. Fan points that share an X value
+    // slightly apart so each column reads as a small cluster. Display-only; tx/ty keep
+    // the true values for tooltips and the average lines.
+    (function jitter(){
+      var xr=(Math.max.apply(null,xs)-Math.min.apply(null,xs))||1;
+      var step=xr*0.010; // ~1% of range per point in a column
+      var groups={};
+      pts.forEach(function(p){ var k=String(p.tx); (groups[k]=groups[k]||[]).push(p); });
+      Object.keys(groups).forEach(function(k){
+        var g=groups[k]; if(g.length<2) return;
+        var mid=(g.length-1)/2;
+        g.forEach(function(p,i){ p.x = p.tx + (i-mid)*step; });
+      });
+    })();
     var xMean=xs.reduce(function(a,b){return a+b;},0)/xs.length;
     var yMean=ys.reduce(function(a,b){return a+b;},0)/ys.length;
+    // Compute padded axis bounds. Without this, Chart.js fits the range tightly, so a
+    // narrow-range metric like unemployment (e.g. 2.1–6.3%) crams every dot against the
+    // edges and same-value states overlap into what looks like "only a few points."
+    // A 6% margin on each side lets the cloud breathe and separates clustered dots.
+    function bounds(vals){
+      var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
+      var pad=(hi-lo)*0.06 || Math.abs(hi)*0.06 || 1;
+      return {min:lo-pad, max:hi+pad};
+    }
+    var xB=bounds(xs), yB=bounds(ys);
     var ctx=document.getElementById('scatter-canvas');
     if(scatterChart) scatterChart.destroy();
     scatterChart=new Chart(ctx,{
@@ -687,11 +592,11 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
         onClick:function(e,els){ if(els&&els.length){ var p=pts[els[0].index]; if(p) select(p.abbr); } },
         plugins:{
           legend:{display:false},
-          tooltip:{callbacks:{label:function(c){var p=c.raw;return p.name+': '+fmtVal(p.x,state.scX)+' · '+fmtVal(p.y,state.scY);}}}
+          tooltip:{callbacks:{label:function(c){var p=c.raw;return p.name+': '+fmtVal(p.tx,state.scX)+' · '+fmtVal(p.ty,state.scY);}}}
         },
         scales:{
-          x:{title:{display:true,text:mx.label,font:{family:'Roboto Mono',size:10}},grid:{color:'#EEF1F6'},ticks:{font:{family:'Roboto Mono',size:9}}},
-          y:{title:{display:true,text:my.label,font:{family:'Roboto Mono',size:10}},grid:{color:'#EEF1F6'},ticks:{font:{family:'Roboto Mono',size:9}}}
+          x:{min:xB.min,max:xB.max,title:{display:true,text:mx.label,font:{family:'Roboto Mono',size:10}},grid:{color:'#EEF1F6'},ticks:{font:{family:'Roboto Mono',size:9}}},
+          y:{min:yB.min,max:yB.max,title:{display:true,text:my.label,font:{family:'Roboto Mono',size:10}},grid:{color:'#EEF1F6'},ticks:{font:{family:'Roboto Mono',size:9}}}
         }
       },
       plugins:[{
@@ -740,32 +645,26 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
   }
 
   function showViz(){
-    var isState=state.geo==='state';
-    var mapShown = isState && state.viz==='map';
+    var mapShown = state.viz==='map';
+    var scatter = state.viz==='scatter';
     document.getElementById('map-card-wrap').style.display = mapShown?'':'none';
     document.getElementById('map-legend').style.display = mapShown?'':'none';
-    document.getElementById('bars-wrap').style.display = (isState&&state.viz==='bars')?'':'none';
-    document.getElementById('scatter-wrap').style.display = (isState&&state.viz==='scatter')?'':'none';
+    document.getElementById('scatter-wrap').style.display = scatter?'':'none';
+    // Scatter picks its two metrics from the X/Y picker, so the metric tabs and the
+    // Level/1-yr-change toggle are meaningless there — hide them and surface the
+    // picker in their place. Map mode does the reverse. (Map/Scatter stays visible.)
+    document.getElementById('metric-tabs').style.display = scatter?'none':'';
+    document.getElementById('mode-seg').style.display = scatter?'none':'';
+    document.getElementById('scatter-picks').style.display = scatter?'':'none';
     var mv=document.getElementById('movers');
-    if(state.viz==='scatter'||!isState){ mv.style.display='none'; } else { renderMovers(); }
-    if(state.viz==='bars') renderBars();
-    if(state.viz==='scatter') renderScatter();
+    if(scatter){ mv.style.display='none'; } else { renderMovers(); }
+    if(scatter) renderScatter();
     setTimeout(postHeight,80);
   }
 
   // ---- controls ----
-  function syncMetricTabs(){
-    // disable income in MSA mode
-    document.querySelectorAll('.mtab').forEach(function(t){
-      var ok = state.geo==='state' || MSA_OK[t.dataset.metric];
-      t.disabled = !ok;
-      t.style.opacity = ok?'':'.4';
-      t.style.cursor = ok?'pointer':'not-allowed';
-    });
-  }
   document.querySelectorAll('.mtab').forEach(function(t){
     t.addEventListener('click',function(){
-      if(t.disabled) return;
       document.querySelectorAll('.mtab').forEach(function(x){x.setAttribute('aria-selected','false');});
       t.setAttribute('aria-selected','true');
       state.metric=t.dataset.metric;
@@ -777,12 +676,9 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
       document.querySelectorAll('#mode-seg button').forEach(function(x){x.setAttribute('aria-selected','false');});
       b.setAttribute('aria-selected','true');
       state.mode=b.dataset.mode;
-      if(state.geo==='state'){
-        if(!state.userPicked){ state.selected=pickLeader(); state._selMode=state.mode; }
-        paint(); showState(state.selected,false); markSelected();
-        if(state.viz!=='map') showViz(); else renderMovers();
-      }
-      else { renderMsa(); }
+      if(!state.userPicked){ state.selected=pickLeader(); state._selMode=state.mode; }
+      paint(); showState(state.selected,false); markSelected();
+      if(state.viz!=='map') showViz(); else renderMovers();
     });
   });
   document.querySelectorAll('#viz-seg button').forEach(function(b){
@@ -802,42 +698,6 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
     });
   });
 
-  document.querySelectorAll('#geo-seg button').forEach(function(b){
-    b.addEventListener('click',function(){
-      document.querySelectorAll('#geo-seg button').forEach(function(x){x.setAttribute('aria-selected','false');});
-      b.setAttribute('aria-selected','true');
-      state.geo=b.dataset.geo;
-      // if switching to MSA on an unsupported metric (income), bump to unemployment
-      if(state.geo==='msa' && !MSA_OK[state.metric]){
-        state.metric='unemp';
-        document.querySelectorAll('.mtab').forEach(function(x){x.setAttribute('aria-selected', x.dataset.metric==='unemp'?'true':'false');});
-      }
-      syncMetricTabs();
-      document.getElementById('state-view').style.display = state.geo==='state'?'':'none';
-      document.getElementById('msa-view').style.display   = state.geo==='msa'?'':'none';
-      // Level/change toggle only applies to the map (single fill); the metro table
-      // shows both value and YoY columns at once, so the toggle is redundant there.
-      document.getElementById('mode-seg').style.display = state.geo==='state'?'':'none';
-      // viz-switcher (Map/Ranked/Scatter) and the movers strip are state-only views
-      document.getElementById('viz-seg').style.display = state.geo==='state'?'':'none';
-      if(state.geo!=='state'){ document.getElementById('movers').style.display='none'; }
-      loadCurrent();
-    });
-  });
-
-  // MSA search + sort
-  document.getElementById('msa-search').addEventListener('input',function(e){
-    state.msa.q=e.target.value.toLowerCase(); renderMsa();
-  });
-  document.querySelectorAll('.msa-table th.sortable').forEach(function(th){
-    th.addEventListener('click',function(){
-      var k=th.dataset.sort;
-      if(state.msa.sort===k){ state.msa.dir = state.msa.dir==='desc'?'asc':'desc'; }
-      else { state.msa.sort=k; state.msa.dir = k==='region'?'asc':'desc'; }
-      renderMsa();
-    });
-  });
-
   // ---- badge ----
   function setBadgeLoading(){
     var b=document.getElementById('src-badge');
@@ -848,14 +708,14 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
     var b=document.getElementById('src-badge');
     b.className='chip '+(isSample?'sample':'live');
     b.innerHTML='<span class="dot"></span>'+(isSample?'Sample data':'Live · FRED');
-    var gen = (state.geo==='msa' && state.msa.data) ? state.msa.data.generated : (state.data&&state.data.generated);
+    var gen = state.data&&state.data.generated;
     document.getElementById('foot-meta').textContent = isSample
       ? ' · NOT CONNECTED — sample values ('+(reason||'unreachable')+').'
       : ' · Retrieved '+new Date(gen||Date.now()).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric'})+'.';
   }
 
   // ---- dispatcher ----
-  function loadCurrent(){ if(state.geo==='state') loadState(); else loadMsa(); }
+  function loadCurrent(){ loadState(); }
 
   function setMapLoading(on){
     var svg=document.getElementById('usmap');
@@ -954,70 +814,6 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
     setTimeout(postHeight,60);
   }
 
-  // ---- MSA (metro) read ----
-  // Metro data is also baked into the snapshot when present; otherwise sample.
-  function loadMsa(){
-    var bucket = SNAP && SNAP.metros && SNAP.metros[state.metric];
-    if(bucket && bucket.metros && bucket.metros.length){
-      state.msa.data={ generated:SNAP.generated, metric:state.metric, label:bucket.label, unit:bucket.unit, as_of:bucket.as_of, metros:bucket.metros };
-      setBadge(SNAP_LOADED?false:true); renderMsa(); afterMsa();
-    } else {
-      state.msa.data=sampleMsa(state.metric); if(!SNAP_LOADED) setBadge(true,'sample'); else setBadge(false); renderMsa(); afterMsa();
-    }
-  }
-  function afterMsa(){
-    var d=state.msa.data;
-    document.getElementById('stamp-date').textContent='As of '+(d.as_of||(d.generated?new Date(d.generated).toISOString().slice(0,7):'sample'));
-    var note=document.getElementById('msa-note');
-    note.textContent = state.metric==='permits'
-      ? 'Top 20 metros. Census permit data lags and updates at different rates per metro — each row shows its latest available month. House prices are state-level only.'
-      : 'Top 20 metros · unemployment & permits only. House prices are state-level (FHFA metro data uses divisions + lags).';
-    setTimeout(postHeight,60);
-  }
-  function renderMsa(){
-    var d=state.msa.data; if(!d) return;
-    var m=METRICS[state.metric];
-    var rows=(d.metros||[]).slice();
-    // filter
-    var q=state.msa.q;
-    if(q) rows=rows.filter(function(r){return r.region.toLowerCase().indexOf(q)>=0;});
-    // sort
-    var k=state.msa.sort, dir=state.msa.dir==='desc'?-1:1;
-    rows.sort(function(a,b){
-      var av,bv;
-      if(k==='region'){ av=a.region.toLowerCase(); bv=b.region.toLowerCase(); return av<bv?-1*dir:av>bv?1*dir:0; }
-      av=(k==='yoy'?a.yoy:a.value); bv=(k==='yoy'?b.yoy:b.value);
-      if(av==null) return 1; if(bv==null) return -1;
-      return (av-bv)*dir;
-    });
-    // header sort indicators
-    document.querySelectorAll('.msa-table th.sortable').forEach(function(th){
-      th.classList.remove('asc','desc');
-      if(th.dataset.sort===k) th.classList.add(state.msa.dir);
-    });
-    document.getElementById('msa-count').textContent = rows.length+' metros'+(q?' (filtered)':'');
-    var body=document.getElementById('msa-body');
-    if(!rows.length){ body.innerHTML='<tr><td colspan="3" class="msa-empty">No metros match “'+q+'”.</td></tr>'; return; }
-    var html='';
-    rows.forEach(function(r){
-      var val=fmtVal(r.value,state.metric);
-      var dt='';
-      if(r.date){
-        var pd=new Date(r.date+'T00:00:00');
-        dt='<span class="asof-cell">'+pd.toLocaleDateString('en-US',{month:'short',year:'numeric'})+'</span>';
-      }
-      var yoyTxt='—', yoyCls='';
-      if(r.yoy!=null&&!isNaN(r.yoy)){
-        var up=r.yoy>=0; var good=INVERTED[state.metric]?!up:up;
-        yoyCls=good?'up':'down'; yoyTxt=(up?'▲ ':'▼ ')+Math.abs(r.yoy).toFixed(1)+'%';
-      }
-      html+='<tr><td class="region">'+r.region+'</td>'+
-            '<td class="num">'+val+dt+'</td>'+
-            '<td class="num yoy '+yoyCls+'">'+yoyTxt+'</td></tr>';
-    });
-    body.innerHTML=html;
-  }
-
   // ---- sample data (used only if Worker unreachable) ----
   function sampleFor(metric){
     var abbrs=MAP.paths.map(function(p){return p.abbr;});
@@ -1032,32 +828,7 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
         return {abbr:a,value:Math.round(v),yoy:yoy,spark:spark};
       })};
   }
-  function sampleMsa(metric){
-    var metros=['Tampa-St. Petersburg-Clearwater, FL','New York-Newark-Jersey City, NY-NJ-PA',
-      'Los Angeles-Long Beach-Anaheim, CA','Chicago-Naperville-Elgin, IL-IN-WI','Dallas-Fort Worth-Arlington, TX',
-      'Houston-The Woodlands-Sugar Land, TX','Atlanta-Sandy Springs-Roswell, GA','Phoenix-Mesa-Chandler, AZ',
-      'Miami-Fort Lauderdale-West Palm Beach, FL','Orlando-Kissimmee-Sanford, FL','Seattle-Tacoma-Bellevue, WA',
-      'San Francisco-Oakland-Berkeley, CA','Denver-Aurora-Lakewood, CO','Detroit-Warren-Dearborn, MI',
-      'Minneapolis-St. Paul-Bloomington, MN-WI','San Diego-Chula Vista-Carlsbad, CA','Charlotte-Concord-Gastonia, NC-SC',
-      'Nashville-Davidson-Murfreesboro-Franklin, TN','Washington-Arlington-Alexandria, DC-VA-MD-WV','Boston-Cambridge-Newton, MA-NH'];
-    function seed(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))&0xffff;return h/0xffff;}
-    var base={hpi:[180,560],unemp:[2.6,6.2],permits:[300,6000]}[metric]||[0,100];
-    return {generated:new Date().toISOString(),metric:metric,label:METRICS[metric].label,unit:METRICS[metric].unit,
-      lagged:metric==='hpi', as_of:'sample', source:'sample',
-      metros:metros.map(function(name,i){
-        var r=seed(name+metric); var v=base[0]+(base[1]-base[0])*r;
-        var yoy=(r-0.5)*(metric==='unemp'?3.5:metric==='permits'?28:11);
-        // sample dates: unemployment is current; permits lag at varied rates per metro
-        var dt;
-        if(metric==='permits'){
-          var lag=Math.floor(r*10); // 0–9 months of lag, varies by metro
-          var dd=new Date(2026,3-lag,1); dt=dd.toISOString().slice(0,10);
-        } else { dt='2026-04-01'; }
-        return {region:name,code:String(i),value:Math.round(v),yoy:yoy,date:dt};
-      })};
-  }
 
-  syncMetricTabs();
   // Load the static snapshot once, then render. After this, every metric/view
   // switch is an in-memory read — no further network calls.
   loadSnapshot().then(loadCurrent);
