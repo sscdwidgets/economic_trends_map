@@ -223,7 +223,7 @@
 
   <footer>
     Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level.
-    Metro data via FRED Maps (GeoFRED). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
+    Metro data: top 20 US metros, BLS unemployment + Census permits (individual series). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
   </footer>
 </div>
 
@@ -251,7 +251,7 @@
   var state = {geo:'state', metric:'hpi', mode:'level', data:null, selected:null,
                msa:{data:null, sort:'value', dir:'desc', q:''}};
   // metrics available at MSA level (income excluded — discontinued for metros)
-  var MSA_OK = {unemp:true, permits:true, hpi:true};
+  var MSA_OK = {unemp:true, permits:true};  // house prices are state-level only (FHFA metro = divisions + lag)
 
   // ---- iframe auto-height ----
   function postHeight(){
@@ -514,7 +514,7 @@
     var d=state.msa.data;
     document.getElementById('stamp-date').textContent='As of '+(d.as_of||new Date().toISOString().slice(0,7));
     var note=document.getElementById('msa-note');
-    note.textContent = d.lagged ? 'Metro house-price data lags ~1–2 quarters.' : '';
+    note.textContent = 'Top 20 metros · unemployment & permits only. House prices are state-level (FHFA metro data uses divisions + lags).';
     setTimeout(postHeight,60);
   }
   function renderMsa(){
@@ -571,12 +571,13 @@
       })};
   }
   function sampleMsa(metric){
-    var metros=['Tampa-St. Petersburg-Clearwater, FL','Miami-Fort Lauderdale-West Palm Beach, FL',
-      'Orlando-Kissimmee-Sanford, FL','Jacksonville, FL','New York-Newark-Jersey City, NY-NJ',
-      'Los Angeles-Long Beach-Anaheim, CA','Chicago-Naperville-Elgin, IL','Dallas-Fort Worth-Arlington, TX',
+    var metros=['Tampa-St. Petersburg-Clearwater, FL','New York-Newark-Jersey City, NY-NJ-PA',
+      'Los Angeles-Long Beach-Anaheim, CA','Chicago-Naperville-Elgin, IL-IN-WI','Dallas-Fort Worth-Arlington, TX',
       'Houston-The Woodlands-Sugar Land, TX','Atlanta-Sandy Springs-Roswell, GA','Phoenix-Mesa-Chandler, AZ',
-      'Seattle-Tacoma-Bellevue, WA','Boston-Cambridge-Newton, MA-NH','Denver-Aurora-Lakewood, CO',
-      'Nashville-Davidson-Murfreesboro-Franklin, TN','Charlotte-Concord-Gastonia, NC-SC'];
+      'Miami-Fort Lauderdale-West Palm Beach, FL','Orlando-Kissimmee-Sanford, FL','Seattle-Tacoma-Bellevue, WA',
+      'San Francisco-Oakland-Berkeley, CA','Denver-Aurora-Lakewood, CO','Detroit-Warren-Dearborn, MI',
+      'Minneapolis-St. Paul-Bloomington, MN-WI','San Diego-Chula Vista-Carlsbad, CA','Charlotte-Concord-Gastonia, NC-SC',
+      'Nashville-Davidson-Murfreesboro-Franklin, TN','Washington-Arlington-Alexandria, DC-VA-MD-WV','Boston-Cambridge-Newton, MA-NH'];
     function seed(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))&0xffff;return h/0xffff;}
     var base={hpi:[180,560],unemp:[2.6,6.2],permits:[300,6000]}[metric]||[0,100];
     return {generated:new Date().toISOString(),metric:metric,label:METRICS[metric].label,unit:METRICS[metric].unit,
