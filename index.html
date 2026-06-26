@@ -284,6 +284,7 @@
   var INVERTED = {unemp:true};
 
   var state = {geo:'state', metric:'hpi', mode:'level', data:null, selected:null,
+               reqId:0,
                msa:{data:null, sort:'value', dir:'desc', q:''}};
   // metrics available at MSA level (income excluded — discontinued for metros)
   var MSA_OK = {unemp:true, permits:true};  // house prices are state-level only (FHFA metro = divisions + lag)
@@ -547,32 +548,53 @@
     if(svg) svg.classList.toggle('loading',on);
     if(card) card.classList.toggle('loading',on);
   }
+  // Fetch JSON with one automatic retry on transient failure (the free-tier
+  // Worker occasionally cold-starts and 502s; a single retry clears most blips).
+  function fetchJSON(url){
+    function once(){
+      return fetch(url,{mode:'cors',cache:'no-store'}).then(function(r){
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+      });
+    }
+    return once().catch(function(){ return new Promise(function(res){setTimeout(res,400);}).then(once); });
+  }
+
   function loadState(){
     setMapLoading(true);
     setBadgeLoading();
-    // The Worker paginates states (free-plan subrequest cap), so fetch chunk 0 first
-    // to learn total_chunks, then fetch the rest and stitch them into one states[].
+    var myReq = ++state.reqId;               // token: only the latest load may render
+    var metricAtStart = state.metric;
     var base=WORKER+'?metric='+state.metric+'&start=2015-01-01';
-    fetch(base+'&chunk=0',{mode:'cors'})
-      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-      .then(function(first){
-        var total=first.total_chunks||1;
-        if(total<=1){ return first; }
-        var rest=[];
-        for(var i=1;i<total;i++){
-          rest.push(fetch(base+'&chunk='+i,{mode:'cors'}).then(function(r){
-            if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
-          }));
-        }
-        return Promise.all(rest).then(function(parts){
-          var merged=first.states.slice();
-          parts.forEach(function(p){ merged=merged.concat(p.states||[]); });
-          first.states=merged;
-          return first;
-        });
-      })
-      .then(function(d){ state.data=d; setBadge(false); afterLoad(); })
-      .catch(function(e){ state.data=sampleFor(state.metric); setBadge(true,(e&&e.message)||'fetch failed'); afterLoad(); });
+
+    fetchJSON(base+'&chunk=0').then(function(first){
+      var total=first.total_chunks||1;
+      if(total<=1){ return {first:first, parts:[]}; }
+      var rest=[];
+      for(var i=1;i<total;i++){ rest.push(fetchJSON(base+'&chunk='+i)); }
+      // allSettled: one bad chunk must NOT sink the whole map — we keep what loaded.
+      return Promise.allSettled(rest).then(function(settled){ return {first:first, parts:settled}; });
+    }).then(function(bundle){
+      if(myReq!==state.reqId) return;        // a newer load started; discard this one
+      var first=bundle.first;
+      var merged=(first.states||[]).slice();
+      var missing=0;
+      bundle.parts.forEach(function(s){
+        if(s.status==='fulfilled' && s.value && s.value.states){ merged=merged.concat(s.value.states); }
+        else { missing++; }
+      });
+      first.states=merged;
+      state.data=first;
+      // live unless we got literally nothing usable
+      if(merged.length){ setBadge(false); if(missing){ document.getElementById('foot-meta').textContent=' · Some regions still loading — partial data shown.'; } }
+      else { state.data=sampleFor(metricAtStart); setBadge(true,'empty response'); }
+      afterLoad();
+    }).catch(function(e){
+      if(myReq!==state.reqId) return;        // stale failure; ignore
+      state.data=sampleFor(metricAtStart);
+      setBadge(true,(e&&e.message)||'fetch failed');
+      afterLoad();
+    });
   }
   function afterLoad(){
     setMapLoading(false);
@@ -592,12 +614,20 @@
   // ---- MSA load + render ----
   function loadMsa(){
     setBadgeLoading();
+    var myReq = ++state.reqId;
+    var metricAtStart = state.metric;
     document.getElementById('msa-body').innerHTML='<tr><td colspan="3" class="msa-empty">Loading metros…</td></tr>';
     var url=WORKER_MSA+'?metric='+state.metric;
-    fetch(url,{mode:'cors'})
-      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-      .then(function(d){ if(d.error) throw new Error(d.error); state.msa.data=d; setBadge(false); renderMsa(); afterMsa(); })
-      .catch(function(e){ state.msa.data=sampleMsa(state.metric); setBadge(true,(e&&e.message)||'fetch failed'); renderMsa(); afterMsa(); });
+    fetchJSON(url)
+      .then(function(d){
+        if(myReq!==state.reqId) return;      // newer load won; discard
+        if(d.error) throw new Error(d.error);
+        state.msa.data=d; setBadge(false); renderMsa(); afterMsa();
+      })
+      .catch(function(e){
+        if(myReq!==state.reqId) return;
+        state.msa.data=sampleMsa(metricAtStart); setBadge(true,(e&&e.message)||'fetch failed'); renderMsa(); afterMsa();
+      });
   }
   function afterMsa(){
     var d=state.msa.data;
