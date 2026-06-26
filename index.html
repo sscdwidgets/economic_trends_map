@@ -100,15 +100,17 @@
   svg.usmap.has-selection path:hover{opacity:.9;}
   svg.usmap.has-selection path.sel:hover{opacity:1;}
 
-  /* loading skeleton: whole map breathes navy<->gold while data is in flight.
-     Paths get a staggered delay so it reads as a gentle wave, not a flat blink. */
+  /* loading skeleton: the whole map gently pulses opacity while data is in flight.
+     NOTE: deliberately does NOT animate `fill` — a fill animation competes with
+     paint()'s setAttribute('fill') and was leaving some states stuck on the
+     animation color (intermittent grey/partial states). Opacity can't conflict. */
   svg.usmap.loading path{
-    animation:mapBreathe 1.6s ease-in-out infinite;
+    animation:mapPulse 1.3s ease-in-out infinite;
     pointer-events:none;
   }
-  @keyframes mapBreathe{
-    0%,100%{ fill:#E3E9F4; }   /* pale navy */
-    50%    { fill:#FBE6B0; }   /* pale gold */
+  @keyframes mapPulse{
+    0%,100%{ opacity:.45; }
+    50%    { opacity:.9; }
   }
   .map-card.loading::after{
     content:"Loading state data\2026";
@@ -261,7 +263,7 @@
   <footer>
     Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level.
     Metro data: top 20 US metros, BLS unemployment + Census permits (individual series). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
-    <span class="build-tag">build 54</span>
+    <span class="build-tag">build 56</span>
     <span class="build-tag" id="diag-tag" style="display:none"></span>
   </footer>
 </div>
@@ -595,11 +597,19 @@
       first.states=merged;
       state.data=first;
       window.__d=first;  // expose for diagnostics
-      // diagnostic readout: chunks received + states rendered (helps pinpoint
-      // incomplete pulls without guesswork)
-      var withVal=merged.filter(function(s){return s.value!=null;}).length;
+      // diagnostic readout: chunks, state count, which states have null value, and
+      // any duplicate abbrs (so an incomplete pull tells us exactly what's wrong).
+      var nullStates=merged.filter(function(s){return s.value==null;}).map(function(s){return s.abbr;});
+      var seen={},dups=[];
+      merged.forEach(function(s){ if(seen[s.abbr])dups.push(s.abbr); seen[s.abbr]=1; });
+      var withVal=merged.length-nullStates.length;
       var dt=document.getElementById('diag-tag');
-      if(dt){ dt.style.display=''; dt.textContent=state.metric+': '+gotChunks+'/'+(first.total_chunks||1)+' chunks · '+merged.length+' states ('+withVal+' w/ data)'; }
+      if(dt){
+        dt.style.display='';
+        dt.textContent=state.metric+': '+gotChunks+'/'+(first.total_chunks||1)+' chunks · '+merged.length+' states · '+withVal+' w/data'
+          +(nullStates.length?(' · NULL: '+nullStates.join(',')):'')
+          +(dups.length?(' · DUP: '+dups.join(',')):'');
+      }
       // live unless we got literally nothing usable
       if(merged.length){ setBadge(false); if(missing){ document.getElementById('foot-meta').textContent=' · Some regions still loading — partial data shown.'; } }
       else { state.data=sampleFor(metricAtStart); setBadge(true,'empty response'); }
@@ -615,15 +625,21 @@
     setMapLoading(false);
     var d=state.data;
     document.getElementById('stamp-date').textContent='As of '+new Date(d.generated||Date.now()).toLocaleDateString('en-US',{month:'short',year:'numeric'});
-    paint();
-    // re-default to the leader whenever the metric changed (or nothing selected yet)
-    if(state.selected==null || state._selMetric!==state.metric){
-      state.selected=pickLeader();
-      state._selMetric=state.metric;
-    }
-    showState(state.selected,false);
-    markSelected();
-    setTimeout(postHeight,60);
+    // Paint on the next animation frame, AFTER the .loading class is removed, so no
+    // CSS animation is mutating fills at the moment we set them. Prevents the
+    // intermittent stuck-grey states.
+    var doPaint=function(){
+      paint();
+      if(state.selected==null || state._selMetric!==state.metric){
+        state.selected=pickLeader();
+        state._selMetric=state.metric;
+      }
+      showState(state.selected,false);
+      markSelected();
+      setTimeout(postHeight,60);
+    };
+    if(window.requestAnimationFrame){ requestAnimationFrame(function(){ requestAnimationFrame(doPaint); }); }
+    else { doPaint(); }
   }
 
   // ---- MSA load + render ----
