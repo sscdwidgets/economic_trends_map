@@ -79,8 +79,8 @@
   .seg button+button{border-left:1px solid var(--line);}
 
   /* layout: map + side panel */
-  .grid{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;}
-  .map-card{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);padding:8px;position:relative;}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;align-items:start;}
+  .map-card{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);padding:14px;position:relative;box-shadow:0 2px 14px rgba(0,45,114,.06);}
   svg.usmap{width:100%;height:auto;display:block;}
   svg.usmap path{stroke:#fff;stroke-width:1;cursor:pointer;transition:opacity .2s ease, fill .35s ease;}
   svg.usmap path:hover{opacity:.78;}
@@ -141,6 +141,55 @@
   .rank li:hover{color:var(--navy);}
   .rank li .v{color:var(--ink-2);}
 
+  /* movers strip */
+  .movers{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+  .mv-col{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;}
+  .mv-col h5{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px;font-weight:600;}
+  .mv-up h5{color:var(--pos);} .mv-down h5{color:var(--neg);}
+  .mv-col ul{list-style:none;margin:0;padding:0;}
+  .mv-col li{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:5px 0;cursor:pointer;border-bottom:1px solid var(--line);}
+  .mv-col li:last-child{border-bottom:none;}
+  .mv-col li:hover{color:var(--navy);}
+  .mv-col li .v{font-family:var(--mono);font-size:12px;font-weight:500;}
+  .mv-up li .v{color:var(--pos);} .mv-down li .v{color:var(--neg);}
+  .mv-col li .nm{font-weight:500;color:var(--ink);}
+  .mv-col li:hover .nm{color:var(--navy);}
+
+  /* viz cards (ranked bars + scatter) */
+  .viz-card{background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-top:2px;}
+  .viz-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600;}
+  .viz-sub{font-weight:400;text-transform:none;letter-spacing:0;}
+
+  /* ranked horizontal bars */
+  .bars{display:flex;flex-direction:column;gap:3px;max-height:560px;overflow-y:auto;}
+  .bar-row{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:3px 4px;border-radius:5px;cursor:pointer;transition:background .12s;}
+  .bar-row:hover{background:var(--panel);}
+  .bar-row.sel{background:#EAF0FB;}
+  .bar-row .lab{font-family:var(--mono);font-size:11px;color:var(--ink-2);font-weight:500;}
+  .bar-row .track{height:18px;background:var(--panel);border-radius:4px;overflow:hidden;position:relative;}
+  .bar-row .fill{height:100%;border-radius:4px;min-width:2px;transition:width .4s ease;}
+  .bar-row .val{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-weight:500;text-align:right;min-width:64px;font-feature-settings:'tnum' 1;}
+  .bars::-webkit-scrollbar{width:8px;} .bars::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:4px;}
+
+  /* scatter */
+  .scatter-picks{display:inline-flex;gap:12px;text-transform:none;letter-spacing:0;font-weight:400;}
+  .scatter-picks label{display:inline-flex;align-items:center;gap:5px;color:var(--ink-3);}
+  .scatter-picks select{font-family:var(--ui);font-size:11px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;color:var(--ink);background:var(--canvas);cursor:pointer;}
+  .scatter-box{height:380px;position:relative;}
+  .scatter-legend{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:10px;line-height:1.5;}
+
+  /* state scorecard */
+  .scorecard{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;}
+  .scorecard h4{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px;font-weight:600;}
+  .sc-row{display:grid;grid-template-columns:1fr auto auto;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);}
+  .sc-row:last-child{border-bottom:none;}
+  .sc-row .sc-lab{font-size:11.5px;color:var(--ink-2);}
+  .sc-row .sc-val{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--ink);text-align:right;font-feature-settings:'tnum' 1;}
+  .sc-row .sc-yoy{font-family:var(--mono);font-size:10.5px;font-weight:500;text-align:right;min-width:52px;}
+  .sc-row .sc-yoy.up{color:var(--pos);} .sc-row .sc-yoy.down{color:var(--neg);}
+  .sc-row.active{background:var(--panel);margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:5px;}
+
   footer{margin-top:22px;padding-top:14px;border-top:1px solid var(--line);
     font-family:var(--mono);font-size:10.5px;color:var(--ink-3);line-height:1.6;}
   .build-tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:100px;
@@ -198,7 +247,7 @@
 
   <div class="geo-toggle">
     <div class="seg" id="geo-seg" role="tablist">
-      <button data-geo="state" aria-selected="true">State map</button>
+      <button data-geo="state" aria-selected="true">States</button>
       <button data-geo="msa" aria-selected="false">Metro areas</button>
     </div>
   </div>
@@ -214,16 +263,52 @@
       <button data-mode="level" aria-selected="true">Level</button>
       <button data-mode="change" aria-selected="false">1-yr change</button>
     </div>
+    <div class="seg" id="viz-seg" role="tablist" title="Choose how to view the state data">
+      <button data-viz="map" aria-selected="true">Map</button>
+      <button data-viz="bars" aria-selected="false">Ranked</button>
+      <button data-viz="scatter" aria-selected="false">Scatter</button>
+    </div>
+  </div>
+
+  <!-- MOVERS STRIP (state view only) -->
+  <div id="movers" class="movers" style="display:none">
+    <div class="mv-col mv-up">
+      <h5 id="mv-up-title">Biggest gainers</h5>
+      <ul id="mv-up-list"></ul>
+    </div>
+    <div class="mv-col mv-down">
+      <h5 id="mv-down-title">Biggest decliners</h5>
+      <ul id="mv-down-list"></ul>
+    </div>
   </div>
 
   <!-- STATE VIEW -->
   <div class="grid" id="state-view">
     <div>
-      <div class="map-card">
+      <div class="map-card" id="map-card-wrap">
         <svg class="usmap" id="usmap" role="img" aria-label="US state choropleth"></svg>
       </div>
       <div class="ticks legend" style="display:none"></div>
-      <div class="legend"><span id="leg-lo">—</span><span class="bar" id="leg-bar"></span><span id="leg-hi">—</span></div>
+      <div class="legend" id="map-legend"><span id="leg-lo">—</span><span class="bar" id="leg-bar"></span><span id="leg-hi">—</span></div>
+
+      <!-- RANKED BAR view -->
+      <div class="viz-card" id="bars-wrap" style="display:none">
+        <div class="viz-head"><span id="bars-title">All states</span><span class="viz-sub" id="bars-sub"></span></div>
+        <div id="bars-list" class="bars"></div>
+      </div>
+
+      <!-- SCATTER view -->
+      <div class="viz-card" id="scatter-wrap" style="display:none">
+        <div class="viz-head">
+          <span>Two-metric view</span>
+          <span class="scatter-picks">
+            <label>X <select id="sc-x"></select></label>
+            <label>Y <select id="sc-y"></select></label>
+          </span>
+        </div>
+        <div class="scatter-box"><canvas id="scatter-canvas"></canvas></div>
+        <div class="scatter-legend" id="sc-quad-note"></div>
+      </div>
     </div>
     <aside class="side" id="side">
       <div class="st-name" id="st-name">Florida</div>
@@ -231,6 +316,13 @@
       <div class="st-val" id="st-val">—</div>
       <div class="st-yoy" id="st-yoy"></div>
       <div class="st-spark"><canvas id="st-spark"></canvas></div>
+
+      <!-- STATE SCORECARD: all four metrics for the selected state -->
+      <div class="scorecard" id="scorecard">
+        <h4>State snapshot</h4>
+        <div id="scorecard-rows"></div>
+      </div>
+
       <div class="rank">
         <h4 id="rank-title">Highest</h4>
         <ul id="rank-list"></ul>
@@ -263,7 +355,7 @@
   <footer>
     Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level.
     Metro data: top 20 US metros, BLS unemployment + Census permits (individual series). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
-    <span class="build-tag">build 63 · live (GeoFRED)</span>
+    <span class="build-tag">build 65 · live (GeoFRED)</span>
     <span class="build-tag" id="diag-tag" style="display:none"></span>
   </footer>
 </div>
@@ -294,9 +386,9 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
   // For these metrics, a HIGHER value is "good"/warm except unemployment (inverted).
   var INVERTED = {unemp:true};
 
-  var state = {geo:'state', metric:'hpi', mode:'level', data:null, selected:null,
+  var state = {geo:'state', metric:'hpi', mode:'level', viz:'map', data:null, selected:null,
                userPicked:false, _selMode:null,
-               reqId:0,
+               reqId:0, scX:'income', scY:'hpi',
                msa:{data:null, sort:'value', dir:'desc', q:''}};
   // metrics available at MSA level (income excluded — discontinued for metros)
   var MSA_OK = {unemp:true, permits:true};  // house prices are state-level only (FHFA metro = divisions + lag)
@@ -457,7 +549,12 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
     }
   }
   function preview(abbr){ showState(abbr,true); }
-  function select(abbr){ state.selected=abbr; state._selMetric=state.metric; state._selMode=state.mode; state.userPicked=true; showState(abbr,false); markSelected(); }
+  function select(abbr){
+    state.selected=abbr; state._selMetric=state.metric; state._selMode=state.mode; state.userPicked=true;
+    showState(abbr,false); markSelected(); renderScorecard(abbr);
+    if(state.viz==='bars') renderBars();
+    else if(state.viz==='scatter' && scatterChart) scatterChart.update();
+  }
 
   function renderRank(byAbbr){
     var arr=state.data.states.filter(function(s){return valOf(s)!=null&&!isNaN(valOf(s));});
@@ -476,6 +573,184 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
       li.addEventListener('click',function(){select(s.abbr);});
       ul.appendChild(li);
     });
+  }
+
+  // ---- viz: ranked bars, scatter, movers, scorecard ----
+  function renderMovers(){
+    var mv=document.getElementById('movers');
+    if(state.geo!=='state'){ mv.style.display='none'; return; }
+    var d=state.data; if(!d){ mv.style.display='none'; return; }
+    var arr=d.states.filter(function(s){return s.yoy!=null&&!isNaN(s.yoy);});
+    if(arr.length<4){ mv.style.display='none'; return; }
+    mv.style.display='';
+    var byYoy=arr.slice().sort(function(a,b){return b.yoy-a.yoy;});
+    var gainers=byYoy.slice(0,5);
+    var decliners=byYoy.slice(-5).reverse();
+    var inv=INVERTED[state.metric];
+    document.getElementById('mv-up-title').textContent = inv?'Rising fastest (watch)':'Biggest gainers';
+    document.getElementById('mv-down-title').textContent = inv?'Falling fastest (improving)':'Biggest decliners';
+    function fill(listId, rows){
+      var ul=document.getElementById(listId); ul.innerHTML='';
+      rows.forEach(function(s){
+        var name=(MAP.paths.find(function(p){return p.abbr===s.abbr;})||{}).name||s.abbr;
+        var li=document.createElement('li');
+        li.innerHTML='<span class="nm">'+name+'</span><span class="v">'+(s.yoy>=0?'+':'')+s.yoy.toFixed(1)+'%</span>';
+        li.addEventListener('click',function(){ select(s.abbr); });
+        ul.appendChild(li);
+      });
+    }
+    fill('mv-up-list', gainers);
+    fill('mv-down-list', decliners);
+  }
+
+  function renderBars(){
+    var d=state.data; if(!d) return;
+    var arr=d.states.filter(function(s){return valOf(s)!=null&&!isNaN(valOf(s));});
+    var inv=(state.mode==='level'&&INVERTED[state.metric]);
+    arr.sort(function(a,b){return valOf(b)-valOf(a);});
+    if(inv) arr.reverse();
+    document.getElementById('bars-title').textContent =
+      state.mode==='change' ? 'Ranked by 1-yr change' : (inv?'Ranked low → high (low is best)':'Ranked high → low');
+    document.getElementById('bars-sub').textContent = arr.length+' states';
+    var vals=arr.map(valOf);
+    var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
+    var box=document.getElementById('bars-list'); box.innerHTML='';
+    arr.forEach(function(s,i){
+      var v=valOf(s);
+      var name=(MAP.paths.find(function(p){return p.abbr===s.abbr;})||{}).name||s.abbr;
+      var row=document.createElement('div'); row.className='bar-row'+(s.abbr===state.selected?' sel':'');
+      var pct, col;
+      if(state.mode==='change'){
+        var mx=Math.max(Math.abs(lo),Math.abs(hi))||1;
+        pct=Math.abs(v)/mx*100;
+        var good = inv? v<0 : v>=0;
+        col = good?'var(--pos)':'var(--neg)';
+      } else {
+        pct = hi>lo ? (v-lo)/(hi-lo)*100 : 50;
+        pct = 8 + pct*0.92;
+        col = 'linear-gradient(90deg,#5B7FC7,#002D72)';
+      }
+      var vtxt = state.mode==='change' ? ((v>=0?'+':'')+v.toFixed(1)+'%') : fmtVal(v,state.metric);
+      row.innerHTML='<span class="lab">'+(i+1)+'. '+s.abbr+'</span>'+
+        '<span class="track"><span class="fill" style="width:'+pct.toFixed(1)+'%;background:'+col+'"></span></span>'+
+        '<span class="val">'+vtxt+'</span>';
+      row.title=name;
+      row.addEventListener('click',function(){ select(s.abbr); });
+      box.appendChild(row);
+    });
+  }
+
+  var scatterChart=null;
+  function fillScatterPicks(){
+    ['sc-x','sc-y'].forEach(function(id){
+      var sel=document.getElementById(id); if(sel.options.length) return;
+      Object.keys(METRICS).forEach(function(k){
+        var o=document.createElement('option'); o.value=k; o.textContent=METRICS[k].label; sel.appendChild(o);
+      });
+    });
+    document.getElementById('sc-x').value=state.scX;
+    document.getElementById('sc-y').value=state.scY;
+  }
+  function renderScatter(){
+    var d=state.data; if(!d||typeof Chart==='undefined') return;
+    fillScatterPicks();
+    var mx=METRICS[state.scX], my=METRICS[state.scY];
+    var sx=(SNAP&&SNAP.metrics&&SNAP.metrics[state.scX]&&SNAP.metrics[state.scX].states)||[];
+    var sy=(SNAP&&SNAP.metrics&&SNAP.metrics[state.scY]&&SNAP.metrics[state.scY].states)||[];
+    var xByAbbr={}; sx.forEach(function(s){xByAbbr[s.abbr]=s.value;});
+    var yByAbbr={}; sy.forEach(function(s){yByAbbr[s.abbr]=s.value;});
+    var pts=[];
+    MAP.paths.forEach(function(p){
+      var xv=xByAbbr[p.abbr], yv=yByAbbr[p.abbr];
+      if(xv==null||yv==null||isNaN(xv)||isNaN(yv)) return;
+      if(pts.some(function(q){return q.abbr===p.abbr;})) return;
+      pts.push({x:xv,y:yv,abbr:p.abbr,name:p.name});
+    });
+    if(!pts.length) return;
+    var xs=pts.map(function(p){return p.x;}), ys=pts.map(function(p){return p.y;});
+    var xMean=xs.reduce(function(a,b){return a+b;},0)/xs.length;
+    var yMean=ys.reduce(function(a,b){return a+b;},0)/ys.length;
+    var ctx=document.getElementById('scatter-canvas');
+    if(scatterChart) scatterChart.destroy();
+    scatterChart=new Chart(ctx,{
+      type:'scatter',
+      data:{datasets:[{
+        data:pts, parsing:false,
+        pointRadius:function(c){var p=c.raw;return p&&p.abbr===state.selected?7:4;},
+        pointHoverRadius:7,
+        pointBackgroundColor:function(c){var p=c.raw;return p&&p.abbr===state.selected?NAVY:'rgba(9,96,187,.55)';},
+        pointBorderColor:function(c){var p=c.raw;return p&&p.abbr===state.selected?'#fff':'rgba(9,96,187,.8)';},
+        pointBorderWidth:function(c){var p=c.raw;return p&&p.abbr===state.selected?2:0.5;}
+      }]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        onClick:function(e,els){ if(els&&els.length){ var p=pts[els[0].index]; if(p) select(p.abbr); } },
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:function(c){var p=c.raw;return p.name+': '+fmtVal(p.x,state.scX)+' · '+fmtVal(p.y,state.scY);}}}
+        },
+        scales:{
+          x:{title:{display:true,text:mx.label,font:{family:'Roboto Mono',size:10}},grid:{color:'#EEF1F6'},ticks:{font:{family:'Roboto Mono',size:9}}},
+          y:{title:{display:true,text:my.label,font:{family:'Roboto Mono',size:10}},grid:{color:'#EEF1F6'},ticks:{font:{family:'Roboto Mono',size:9}}}
+        }
+      },
+      plugins:[{
+        id:'quadlines',
+        beforeDatasetsDraw:function(chart){
+          var a=chart.chartArea, sc=chart.scales; if(!a)return;
+          var cx=sc.x.getPixelForValue(xMean), cy=sc.y.getPixelForValue(yMean);
+          var g=chart.ctx; g.save(); g.strokeStyle='#C9D2E3'; g.setLineDash([4,4]); g.lineWidth=1;
+          g.beginPath(); g.moveTo(cx,a.top); g.lineTo(cx,a.bottom); g.stroke();
+          g.beginPath(); g.moveTo(a.left,cy); g.lineTo(a.right,cy); g.stroke();
+          g.restore();
+        }
+      }]
+    });
+    document.getElementById('sc-quad-note').textContent =
+      'Dashed lines = national average for each metric. Click a dot to inspect that state.';
+  }
+
+  function renderScorecard(abbr){
+    var box=document.getElementById('scorecard-rows'); if(!box) return;
+    box.innerHTML='';
+    ['hpi','unemp','income','permits'].forEach(function(k){
+      var st=(SNAP&&SNAP.metrics&&SNAP.metrics[k]&&SNAP.metrics[k].states)||[];
+      var s=st.find(function(x){return x.abbr===abbr;});
+      var m=METRICS[k];
+      var row=document.createElement('div'); row.className='sc-row'+(k===state.metric?' active':'');
+      var val = (s&&s.value!=null)? fmtVal(s.value,k) : '—';
+      var yoyTxt='', yoyCls='';
+      if(s&&s.yoy!=null&&!isNaN(s.yoy)){
+        var up=s.yoy>=0; var good=INVERTED[k]?!up:up;
+        yoyCls=good?'up':'down';
+        yoyTxt=(up?'▲':'▼')+Math.abs(s.yoy).toFixed(1)+'%';
+      }
+      row.innerHTML='<span class="sc-lab">'+m.label+'</span>'+
+        '<span class="sc-val">'+val+'</span>'+
+        '<span class="sc-yoy '+yoyCls+'">'+yoyTxt+'</span>';
+      row.addEventListener('click',function(){
+        var tab=document.querySelector('.mtab[data-metric="'+k+'"]');
+        if(k!==state.metric && tab && !tab.disabled){
+          document.querySelectorAll('.mtab').forEach(function(x){x.setAttribute('aria-selected', x.dataset.metric===k?'true':'false');});
+          state.metric=k; loadCurrent();
+        }
+      });
+      box.appendChild(row);
+    });
+  }
+
+  function showViz(){
+    var isState=state.geo==='state';
+    var mapShown = isState && state.viz==='map';
+    document.getElementById('map-card-wrap').style.display = mapShown?'':'none';
+    document.getElementById('map-legend').style.display = mapShown?'':'none';
+    document.getElementById('bars-wrap').style.display = (isState&&state.viz==='bars')?'':'none';
+    document.getElementById('scatter-wrap').style.display = (isState&&state.viz==='scatter')?'':'none';
+    var mv=document.getElementById('movers');
+    if(state.viz==='scatter'||!isState){ mv.style.display='none'; } else { renderMovers(); }
+    if(state.viz==='bars') renderBars();
+    if(state.viz==='scatter') renderScatter();
+    setTimeout(postHeight,80);
   }
 
   // ---- controls ----
@@ -503,14 +778,30 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
       b.setAttribute('aria-selected','true');
       state.mode=b.dataset.mode;
       if(state.geo==='state'){
-        // If the selection is the auto-picked leader (not a manual click), follow the
-        // new view's leader — the top state for Level isn't the top mover for change.
         if(!state.userPicked){ state.selected=pickLeader(); state._selMode=state.mode; }
         paint(); showState(state.selected,false); markSelected();
+        if(state.viz!=='map') showViz(); else renderMovers();
       }
       else { renderMsa(); }
     });
   });
+  document.querySelectorAll('#viz-seg button').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('#viz-seg button').forEach(function(x){x.setAttribute('aria-selected','false');});
+      b.setAttribute('aria-selected','true');
+      state.viz=b.dataset.viz;
+      showViz();
+    });
+  });
+  ['sc-x','sc-y'].forEach(function(id){
+    document.addEventListener('change',function(e){
+      if(e.target&&e.target.id===id){
+        if(id==='sc-x') state.scX=e.target.value; else state.scY=e.target.value;
+        renderScatter();
+      }
+    });
+  });
+
   document.querySelectorAll('#geo-seg button').forEach(function(b){
     b.addEventListener('click',function(){
       document.querySelectorAll('#geo-seg button').forEach(function(x){x.setAttribute('aria-selected','false');});
@@ -527,6 +818,9 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
       // Level/change toggle only applies to the map (single fill); the metro table
       // shows both value and YoY columns at once, so the toggle is redundant there.
       document.getElementById('mode-seg').style.display = state.geo==='state'?'':'none';
+      // viz-switcher (Map/Ranked/Scatter) and the movers strip are state-only views
+      document.getElementById('viz-seg').style.display = state.geo==='state'?'':'none';
+      if(state.geo!=='state'){ document.getElementById('movers').style.display='none'; }
       loadCurrent();
     });
   });
@@ -655,6 +949,8 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
     }
     showState(state.selected,false);
     markSelected();
+    renderScorecard(state.selected);
+    showViz();
     setTimeout(postHeight,60);
   }
 
