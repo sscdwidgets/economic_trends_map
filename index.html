@@ -263,7 +263,7 @@
   <footer>
     Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level.
     Metro data: top 20 US metros, BLS unemployment + Census permits (individual series). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
-    <span class="build-tag">build 56</span>
+    <span class="build-tag">build 58 · precompute</span>
     <span class="build-tag" id="diag-tag" style="display:none"></span>
   </footer>
 </div>
@@ -552,117 +552,83 @@
   // ---- dispatcher ----
   function loadCurrent(){ if(state.geo==='state') loadState(); else loadMsa(); }
 
-  // ---- STATE load ----
   function setMapLoading(on){
     var svg=document.getElementById('usmap');
     var card=svg&&svg.closest('.map-card');
     if(svg) svg.classList.toggle('loading',on);
     if(card) card.classList.toggle('loading',on);
   }
-  // Fetch JSON with one quick retry. Kept deliberately simple — heavier retry/
-  // timeout/batching logic made loads slower and exposed more partial states.
-  function fetchJSON(url){
-    function once(){
-      return fetch(url,{mode:'cors',cache:'no-store'}).then(function(r){
-        if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
+
+  // ---- PRECOMPUTE DATA MODEL ----
+  // The map reads ONE static file (data.json) generated periodically from FRED via
+  // the build-map-data tool. No live FRED calls, no chunking, no subrequest cap, no
+  // cold-start race. SNAP holds all metrics in memory; switching metric/view just
+  // reads from it synchronously — instant and can't half-load.
+  var SNAP=null;          // { generated, metrics:{ hpi:{states:[...]}, ... } }
+  var SNAP_LOADED=false;
+
+  function loadSnapshot(){
+    setMapLoading(true); setBadgeLoading();
+    // Try the static file first; fall back to embedded sample if it's missing.
+    return fetch('https://sscdwidgets.github.io/economic_trends_map/data.json',{cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(d){
+        if(!d || !d.metrics) throw new Error('bad data.json');
+        SNAP=d; SNAP_LOADED=true; setBadge(false);
+      })
+      .catch(function(e){
+        // Build an in-memory snapshot from sample data so the map still works.
+        SNAP={generated:null, metrics:{}};
+        ['hpi','unemp','income','permits'].forEach(function(m){
+          var s=sampleFor(m); SNAP.metrics[m]={label:(METRICS[m]||{}).label,states:s.states};
+        });
+        SNAP_LOADED=true; setBadge(true,(e&&e.message)||'data.json not found');
       });
-    }
-    return once().catch(function(){ return new Promise(function(res){setTimeout(res,500);}).then(once); });
   }
 
   function loadState(){
-    setMapLoading(true);
-    setBadgeLoading();
-    var myReq = ++state.reqId;               // token: only the latest load may render
-    var metricAtStart = state.metric;
-    var base=WORKER+'?metric='+state.metric;
-
-    fetchJSON(base+'&chunk=0').then(function(first){
-      var total=first.total_chunks||1;
-      if(total<=1){ return {first:first, parts:[]}; }
-      // Simple parallel fetch of the remaining chunks. allSettled so one bad chunk
-      // can't sink the whole map.
-      var rest=[];
-      for(var i=1;i<total;i++){ rest.push(fetchJSON(base+'&chunk='+i)); }
-      return Promise.allSettled(rest).then(function(settled){ return {first:first, parts:settled}; });
-    }).then(function(bundle){
-      if(myReq!==state.reqId) return;        // a newer load started; discard this one
-      var first=bundle.first;
-      var merged=(first.states||[]).slice();
-      var missing=0, gotChunks=1;
-      bundle.parts.forEach(function(s){
-        if(s.status==='fulfilled' && s.value && s.value.states){ merged=merged.concat(s.value.states); gotChunks++; }
-        else { missing++; }
-      });
-      first.states=merged;
-      state.data=first;
-      window.__d=first;  // expose for diagnostics
-      // diagnostic readout: chunks, state count, which states have null value, and
-      // any duplicate abbrs (so an incomplete pull tells us exactly what's wrong).
-      var nullStates=merged.filter(function(s){return s.value==null;}).map(function(s){return s.abbr;});
-      var seen={},dups=[];
-      merged.forEach(function(s){ if(seen[s.abbr])dups.push(s.abbr); seen[s.abbr]=1; });
-      var withVal=merged.length-nullStates.length;
-      var dt=document.getElementById('diag-tag');
-      if(dt){
-        dt.style.display='';
-        dt.textContent=state.metric+': '+gotChunks+'/'+(first.total_chunks||1)+' chunks · '+merged.length+' states · '+withVal+' w/data'
-          +(nullStates.length?(' · NULL: '+nullStates.join(',')):'')
-          +(dups.length?(' · DUP: '+dups.join(',')):'');
-      }
-      // live unless we got literally nothing usable
-      if(merged.length){ setBadge(false); if(missing){ document.getElementById('foot-meta').textContent=' · Some regions still loading — partial data shown.'; } }
-      else { state.data=sampleFor(metricAtStart); setBadge(true,'empty response'); }
-      afterLoad();
-    }).catch(function(e){
-      if(myReq!==state.reqId) return;        // stale failure; ignore
-      state.data=sampleFor(metricAtStart);
-      setBadge(true,(e&&e.message)||'fetch failed');
-      afterLoad();
-    });
+    // Pure in-memory read — no network. SNAP is loaded once at startup.
+    var bucket = SNAP && SNAP.metrics && SNAP.metrics[state.metric];
+    var states = (bucket && bucket.states) ? bucket.states : [];
+    state.data = { generated: SNAP&&SNAP.generated, metric: state.metric, states: states };
+    window.__d = state.data;
+    // diagnostic
+    var withVal=states.filter(function(s){return s.value!=null;}).length;
+    var nullStates=states.filter(function(s){return s.value==null;}).map(function(s){return s.abbr;});
+    var dt=document.getElementById('diag-tag');
+    if(dt){ dt.style.display=''; dt.textContent=(SNAP_LOADED?'static':'?')+' '+state.metric+': '+states.length+' states · '+withVal+' w/data'+(nullStates.length?(' · NULL: '+nullStates.join(',')):''); }
+    setMapLoading(false);
+    afterLoad();
   }
+
   function afterLoad(){
     setMapLoading(false);
     var d=state.data;
-    document.getElementById('stamp-date').textContent='As of '+new Date(d.generated||Date.now()).toLocaleDateString('en-US',{month:'short',year:'numeric'});
-    // Paint on the next animation frame, AFTER the .loading class is removed, so no
-    // CSS animation is mutating fills at the moment we set them. Prevents the
-    // intermittent stuck-grey states.
-    var doPaint=function(){
-      paint();
-      if(state.selected==null || state._selMetric!==state.metric){
-        state.selected=pickLeader();
-        state._selMetric=state.metric;
-      }
-      showState(state.selected,false);
-      markSelected();
-      setTimeout(postHeight,60);
-    };
-    if(window.requestAnimationFrame){ requestAnimationFrame(function(){ requestAnimationFrame(doPaint); }); }
-    else { doPaint(); }
+    document.getElementById('stamp-date').textContent='As of '+(d.generated?new Date(d.generated).toLocaleDateString('en-US',{month:'short',year:'numeric'}):'sample');
+    paint();
+    if(state.selected==null || state._selMetric!==state.metric){
+      state.selected=pickLeader();
+      state._selMetric=state.metric;
+    }
+    showState(state.selected,false);
+    markSelected();
+    setTimeout(postHeight,60);
   }
 
-  // ---- MSA load + render ----
+  // ---- MSA (metro) read ----
+  // Metro data is also baked into the snapshot when present; otherwise sample.
   function loadMsa(){
-    setBadgeLoading();
-    var myReq = ++state.reqId;
-    var metricAtStart = state.metric;
-    document.getElementById('msa-body').innerHTML='<tr><td colspan="3" class="msa-empty">Loading metros…</td></tr>';
-    var url=WORKER_MSA+'?metric='+state.metric;
-    fetchJSON(url)
-      .then(function(d){
-        if(myReq!==state.reqId) return;      // newer load won; discard
-        if(d.error) throw new Error(d.error);
-        state.msa.data=d; setBadge(false); renderMsa(); afterMsa();
-      })
-      .catch(function(e){
-        if(myReq!==state.reqId) return;
-        state.msa.data=sampleMsa(metricAtStart); setBadge(true,(e&&e.message)||'fetch failed'); renderMsa(); afterMsa();
-      });
+    var bucket = SNAP && SNAP.metros && SNAP.metros[state.metric];
+    if(bucket && bucket.metros && bucket.metros.length){
+      state.msa.data={ generated:SNAP.generated, metric:state.metric, label:bucket.label, unit:bucket.unit, as_of:bucket.as_of, metros:bucket.metros };
+      setBadge(SNAP_LOADED?false:true); renderMsa(); afterMsa();
+    } else {
+      state.msa.data=sampleMsa(state.metric); if(!SNAP_LOADED) setBadge(true,'sample'); else setBadge(false); renderMsa(); afterMsa();
+    }
   }
   function afterMsa(){
     var d=state.msa.data;
-    document.getElementById('stamp-date').textContent='As of '+(d.as_of||new Date().toISOString().slice(0,7));
+    document.getElementById('stamp-date').textContent='As of '+(d.as_of||(d.generated?new Date(d.generated).toISOString().slice(0,7):'sample'));
     var note=document.getElementById('msa-note');
     note.textContent = state.metric==='permits'
       ? 'Top 20 metros. Census permit data lags and updates at different rates per metro — each row shows its latest available month. House prices are state-level only.'
@@ -753,7 +719,9 @@
   }
 
   syncMetricTabs();
-  loadCurrent();
+  // Load the static snapshot once, then render. After this, every metric/view
+  // switch is an in-memory read — no further network calls.
+  loadSnapshot().then(loadCurrent);
 })();
 </script>
 </body>
