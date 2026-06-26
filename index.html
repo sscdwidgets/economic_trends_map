@@ -263,7 +263,7 @@
   <footer>
     Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level.
     Metro data: top 20 US metros, BLS unemployment + Census permits (individual series). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
-    <span class="build-tag">build 58 · precompute</span>
+    <span class="build-tag">build 59 · auto-refresh</span>
     <span class="build-tag" id="diag-tag" style="display:none"></span>
   </footer>
 </div>
@@ -569,20 +569,26 @@
 
   function loadSnapshot(){
     setMapLoading(true); setBadgeLoading();
-    // Try the static file first; fall back to embedded sample if it's missing.
-    return fetch('https://sscdwidgets.github.io/economic_trends_map/data.json',{cache:'no-store'})
-      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-      .then(function(d){
-        if(!d || !d.metrics) throw new Error('bad data.json');
-        SNAP=d; SNAP_LOADED=true; setBadge(false);
+    var WORKER_DATA='https://fred-proxy.jameswspence.workers.dev/data';
+    var STATIC_DATA='https://sscdwidgets.github.io/economic_trends_map/data.json';
+    function valid(d){ return d && d.metrics && Object.keys(d.metrics).length>0; }
+    function tryUrl(u){ return fetch(u,{cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }); }
+
+    // 1) auto-refreshed Worker /data (kept current by the cron, no manual step).
+    // 2) static data.json on GitHub Pages (safety net if the Worker is down).
+    // 3) embedded sample data (so the map is never blank).
+    return tryUrl(WORKER_DATA)
+      .then(function(d){ if(!valid(d)) throw new Error('empty /data'); SNAP=d; SNAP_LOADED=true; setBadge(false); })
+      .catch(function(){
+        return tryUrl(STATIC_DATA)
+          .then(function(d){ if(!valid(d)) throw new Error('empty static'); SNAP=d; SNAP_LOADED=true; setBadge(false); });
       })
       .catch(function(e){
-        // Build an in-memory snapshot from sample data so the map still works.
         SNAP={generated:null, metrics:{}};
         ['hpi','unemp','income','permits'].forEach(function(m){
           var s=sampleFor(m); SNAP.metrics[m]={label:(METRICS[m]||{}).label,states:s.states};
         });
-        SNAP_LOADED=true; setBadge(true,(e&&e.message)||'data.json not found');
+        SNAP_LOADED=true; setBadge(true,(e&&e.message)||'no data source');
       });
   }
 
