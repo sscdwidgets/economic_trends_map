@@ -261,7 +261,7 @@
   <footer>
     Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level.
     Metro data: top 20 US metros, BLS unemployment + Census permits (individual series). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
-    <span class="build-tag">build 52</span>
+    <span class="build-tag">build 53</span>
   </footer>
 </div>
 
@@ -556,21 +556,15 @@
     if(svg) svg.classList.toggle('loading',on);
     if(card) card.classList.toggle('loading',on);
   }
-  // Fetch JSON with timeout + up to 2 retries with backoff. The free-tier Worker
-  // cold-starts and can be slow or 502 on the first hits after idle, especially for
-  // the heavier monthly metrics; retries with a growing delay clear nearly all of it.
-  function fetchJSON(url, attempt){
-    attempt = attempt||0;
-    var ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
-    var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 9000) : null;
-    return fetch(url,{mode:'cors',cache:'no-store',signal:ctrl?ctrl.signal:undefined})
-      .then(function(r){ if(timer)clearTimeout(timer); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-      .catch(function(e){
-        if(timer)clearTimeout(timer);
-        if(attempt>=2) throw e;                       // give up after 3 total tries
-        var wait = 350*(attempt+1)*(attempt+1);       // 350ms, 1400ms backoff
-        return new Promise(function(res){setTimeout(res,wait);}).then(function(){ return fetchJSON(url, attempt+1); });
+  // Fetch JSON with one quick retry. Kept deliberately simple — heavier retry/
+  // timeout/batching logic made loads slower and exposed more partial states.
+  function fetchJSON(url){
+    function once(){
+      return fetch(url,{mode:'cors',cache:'no-store'}).then(function(r){
+        if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
       });
+    }
+    return once().catch(function(){ return new Promise(function(res){setTimeout(res,500);}).then(once); });
   }
 
   function loadState(){
@@ -578,30 +572,16 @@
     setBadgeLoading();
     var myReq = ++state.reqId;               // token: only the latest load may render
     var metricAtStart = state.metric;
-    // No start param — the Worker picks an appropriate window per metric
-    // (tighter for heavy monthly series, longer for quarterly/annual).
     var base=WORKER+'?metric='+state.metric;
 
     fetchJSON(base+'&chunk=0').then(function(first){
       var total=first.total_chunks||1;
       if(total<=1){ return {first:first, parts:[]}; }
-      // Chunk 0 has now warmed the Worker. Fetch the rest in small serial batches
-      // (3 at a time) rather than all at once — a cold Worker handling 5 simultaneous
-      // requests is where monthly metrics were timing out. Batching keeps concurrent
-      // load modest while still being fast. allSettled so one bad chunk can't sink it.
-      var idx=[]; for(var i=1;i<total;i++){ idx.push(i); }
-      var parts=[];
-      function runBatch(){
-        if(!idx.length) return Promise.resolve();
-        var batch=idx.splice(0,3).map(function(i){
-          return fetchJSON(base+'&chunk='+i).then(
-            function(v){ return {status:'fulfilled', value:v}; },
-            function(e){ return {status:'rejected', reason:e}; }
-          );
-        });
-        return Promise.all(batch).then(function(res){ parts=parts.concat(res); return runBatch(); });
-      }
-      return runBatch().then(function(){ return {first:first, parts:parts}; });
+      // Simple parallel fetch of the remaining chunks. allSettled so one bad chunk
+      // can't sink the whole map.
+      var rest=[];
+      for(var i=1;i<total;i++){ rest.push(fetchJSON(base+'&chunk='+i)); }
+      return Promise.allSettled(rest).then(function(settled){ return {first:first, parts:settled}; });
     }).then(function(bundle){
       if(myReq!==state.reqId) return;        // a newer load started; discard this one
       var first=bundle.first;
