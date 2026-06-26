@@ -263,7 +263,7 @@
   <footer>
     Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level.
     Metro data: top 20 US metros, BLS unemployment + Census permits (individual series). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
-    <span class="build-tag">build 62 · live (GeoFRED)</span>
+    <span class="build-tag">build 63 · live (GeoFRED)</span>
     <span class="build-tag" id="diag-tag" style="display:none"></span>
   </footer>
 </div>
@@ -295,6 +295,7 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
   var INVERTED = {unemp:true};
 
   var state = {geo:'state', metric:'hpi', mode:'level', data:null, selected:null,
+               userPicked:false, _selMode:null,
                reqId:0,
                msa:{data:null, sort:'value', dir:'desc', q:''}};
   // metrics available at MSA level (income excluded — discontinued for metros)
@@ -456,7 +457,7 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
     }
   }
   function preview(abbr){ showState(abbr,true); }
-  function select(abbr){ state.selected=abbr; state._selMetric=state.metric; showState(abbr,false); markSelected(); }
+  function select(abbr){ state.selected=abbr; state._selMetric=state.metric; state._selMode=state.mode; state.userPicked=true; showState(abbr,false); markSelected(); }
 
   function renderRank(byAbbr){
     var arr=state.data.states.filter(function(s){return valOf(s)!=null&&!isNaN(valOf(s));});
@@ -501,7 +502,12 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
       document.querySelectorAll('#mode-seg button').forEach(function(x){x.setAttribute('aria-selected','false');});
       b.setAttribute('aria-selected','true');
       state.mode=b.dataset.mode;
-      if(state.geo==='state'){ paint(); showState(state.selected,false); }
+      if(state.geo==='state'){
+        // If the selection is the auto-picked leader (not a manual click), follow the
+        // new view's leader — the top state for Level isn't the top mover for change.
+        if(!state.userPicked){ state.selected=pickLeader(); state._selMode=state.mode; }
+        paint(); showState(state.selected,false); markSelected();
+      }
       else { renderMsa(); }
     });
   });
@@ -639,9 +645,13 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
     var d=state.data;
     document.getElementById('stamp-date').textContent='As of '+(d.generated?new Date(d.generated).toLocaleDateString('en-US',{month:'short',year:'numeric'}):'sample');
     paint();
+    // On metric change (or first load), follow the leader for the current view and
+    // clear any manual pick — the new metric has its own most-relevant state.
     if(state.selected==null || state._selMetric!==state.metric){
       state.selected=pickLeader();
       state._selMetric=state.metric;
+      state._selMode=state.mode;
+      state.userPicked=false;
     }
     showState(state.selected,false);
     markSelected();
