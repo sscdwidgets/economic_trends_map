@@ -261,7 +261,8 @@
   <footer>
     Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level.
     Metro data: top 20 US metros, BLS unemployment + Census permits (individual series). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
-    <span class="build-tag">build 53</span>
+    <span class="build-tag">build 54</span>
+    <span class="build-tag" id="diag-tag" style="display:none"></span>
   </footer>
 </div>
 
@@ -586,13 +587,19 @@
       if(myReq!==state.reqId) return;        // a newer load started; discard this one
       var first=bundle.first;
       var merged=(first.states||[]).slice();
-      var missing=0;
+      var missing=0, gotChunks=1;
       bundle.parts.forEach(function(s){
-        if(s.status==='fulfilled' && s.value && s.value.states){ merged=merged.concat(s.value.states); }
+        if(s.status==='fulfilled' && s.value && s.value.states){ merged=merged.concat(s.value.states); gotChunks++; }
         else { missing++; }
       });
       first.states=merged;
       state.data=first;
+      window.__d=first;  // expose for diagnostics
+      // diagnostic readout: chunks received + states rendered (helps pinpoint
+      // incomplete pulls without guesswork)
+      var withVal=merged.filter(function(s){return s.value!=null;}).length;
+      var dt=document.getElementById('diag-tag');
+      if(dt){ dt.style.display=''; dt.textContent=state.metric+': '+gotChunks+'/'+(first.total_chunks||1)+' chunks · '+merged.length+' states ('+withVal+' w/ data)'; }
       // live unless we got literally nothing usable
       if(merged.length){ setBadge(false); if(missing){ document.getElementById('foot-meta').textContent=' · Some regions still loading — partial data shown.'; } }
       else { state.data=sampleFor(metricAtStart); setBadge(true,'empty response'); }
