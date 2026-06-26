@@ -261,7 +261,7 @@
   <footer>
     Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level.
     Metro data: top 20 US metros, BLS unemployment + Census permits (individual series). Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
-    <span class="build-tag">build 50</span>
+    <span class="build-tag">build 51</span>
   </footer>
 </div>
 
@@ -568,7 +568,9 @@
     setBadgeLoading();
     var myReq = ++state.reqId;               // token: only the latest load may render
     var metricAtStart = state.metric;
-    var base=WORKER+'?metric='+state.metric+'&start=2015-01-01';
+    // No start param — the Worker picks an appropriate window per metric
+    // (tighter for heavy monthly series, longer for quarterly/annual).
+    var base=WORKER+'?metric='+state.metric;
 
     fetchJSON(base+'&chunk=0').then(function(first){
       var total=first.total_chunks||1;
