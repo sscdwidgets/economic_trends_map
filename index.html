@@ -208,8 +208,7 @@
 
   <div class="controls">
     <div class="metric-tabs" id="metric-tabs" role="tablist">
-      <button class="mtab" role="tab" data-metric="crehealth" aria-selected="true">CRE Health</button>
-      <button class="mtab" role="tab" data-metric="hpi" aria-selected="false">House Prices</button>
+      <button class="mtab" role="tab" data-metric="hpi" aria-selected="true">House Prices</button>
       <button class="mtab" role="tab" data-metric="unemp" aria-selected="false">Unemployment</button>
       <button class="mtab" role="tab" data-metric="income" aria-selected="false">Per-Capita Income</button>
       <button class="mtab" role="tab" data-metric="permits" aria-selected="false">Building Permits</button>
@@ -275,8 +274,8 @@
   </div>
 
   <footer>
-    Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment &amp; nonfarm employment, BEA income, Census permits &amp; population. Public-domain, state-level. CRE Health Score is a demand-fundamentals composite (employment, population, income, unemployment trends) — a directional proxy, not measured CRE prices or cap rates. Economic context only; not property-level valuations or investment advice. <span id="foot-meta"></span>
-    <span class="build-tag">build 74 · live (GeoFRED)</span>
+    Source: Federal Reserve Bank of St. Louis (FRED) — FHFA house prices, BLS unemployment, BEA income, Census permits. Public-domain, state-level. Economic context only; not property-level CRE valuations and not investment advice. <span id="foot-meta"></span>
+    <span class="build-tag">build 73 · live (GeoFRED)</span>
     <span class="build-tag" id="diag-tag" style="display:none"></span>
   </footer>
 </div>
@@ -299,7 +298,6 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
 
   var MAP = JSON.parse(document.getElementById('mapdata').textContent);
   var METRICS = {
-    crehealth:{label:'CRE Health Score', unit:'', prefix:'', fmt:0, freq:'composite', composite:true},
     hpi:    {label:'House Price Index', unit:'', prefix:'', fmt:0, freq:'q'},
     unemp:  {label:'Unemployment Rate', unit:'%', prefix:'', fmt:1, freq:'m'},
     income: {label:'Per-Capita Income', unit:'', prefix:'$', fmt:0, freq:'a'},
@@ -308,7 +306,7 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
   // For these metrics, a HIGHER value is "good"/warm except unemployment (inverted).
   var INVERTED = {unemp:true};
 
-  var state = {metric:'crehealth', mode:'level', viz:'map', data:null, selected:null,
+  var state = {metric:'hpi', mode:'level', viz:'map', data:null, selected:null,
                userPicked:false, _selMode:null,
                reqId:0, scX:'income', scY:'hpi'};
 
@@ -447,16 +445,7 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
     document.getElementById('st-metric').textContent=m.label;
     document.getElementById('st-val').textContent=fmtVal(s.value, state.metric);
     var yoyEl=document.getElementById('st-yoy');
-    if(state.metric==='crehealth'){
-      // verdict band in the allocation language used on the CRE dashboard
-      var v=s.value, verdict, vcls;
-      if(v>=66){verdict='Add Capital';vcls='up';}
-      else if(v>=40){verdict='Maintain';vcls='';}
-      else {verdict='Decrease Capital';vcls='down';}
-      var empTxt = (s.yoy!=null&&!isNaN(s.yoy)) ? ' · jobs '+(s.yoy>=0?'+':'')+s.yoy.toFixed(1)+'% YoY' : '';
-      yoyEl.className='st-yoy '+vcls;
-      yoyEl.textContent=verdict+empTxt;
-    } else if(s.yoy!=null&&!isNaN(s.yoy)){
+    if(s.yoy!=null&&!isNaN(s.yoy)){
       var up=s.yoy>=0;
       // good direction depends on metric
       var good = INVERTED[state.metric]? !up : up;
@@ -735,67 +724,6 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
     if(card) card.classList.toggle('loading',on);
   }
 
-  // ---- CRE Health Score (synthetic composite) ----
-  // A 0–100 read on each state's commercial-real-estate DEMAND health, blended from
-  // the trajectory of four public FRED state series. It is a demand-fundamentals proxy
-  // — NOT measured CRE transaction prices or cap rates (those need a licensed feed).
-  // Method: percentile-rank each input across the 51 states, weight, average, rescale.
-  //   employment growth (YoY) 30% · population growth (YoY, migration proxy) 30% ·
-  //   income growth (YoY) 20% · unemployment (level+direction, inverted) 20%
-  // Permits are deliberately EXCLUDED — shown separately as supply pressure, since heavy
-  // permitting is double-edged (growth vs. future oversupply) and would muddy a health score.
-  function computeCREHealth(){
-    if(!SNAP || !SNAP.metrics) return;
-    var emp=(SNAP.metrics.employment||{}).states||[];
-    var pop=(SNAP.metrics.population||{}).states||[];
-    var inc=(SNAP.metrics.income||{}).states||[];
-    var une=(SNAP.metrics.unemp||{}).states||[];
-    if(!emp.length || !pop.length){ return; } // need the growth inputs to mean anything
-
-    function byAbbr(arr){ var m={}; arr.forEach(function(s){ if(s&&s.abbr) m[s.abbr]=s; }); return m; }
-    var E=byAbbr(emp), P=byAbbr(pop), I=byAbbr(inc), U=byAbbr(une);
-    var abbrs=emp.map(function(s){return s.abbr;}).filter(Boolean);
-
-    function val(o){ return o && o.value!=null && !isNaN(o.value) ? o.value : null; }
-    function yoy(o){ return o && o.yoy!=null && !isNaN(o.yoy) ? o.yoy : null; }
-
-    var rows=abbrs.map(function(a){
-      var uLevel=val(U[a]), uYoY=yoy(U[a]);
-      // unemployment stress: level plus its 1-yr direction (rising unemployment = more stress)
-      var uStress = (uLevel!=null) ? (uLevel + (uYoY!=null? uYoY : 0)) : null;
-      return { abbr:a, code:(E[a]&&E[a].code)||null,
-               empG:yoy(E[a]), popG:yoy(P[a]), incG:yoy(I[a]), uStress:uStress };
-    });
-
-    // percentile-rank a field 0–100 across rows; missing → median (50) so one absent
-    // input neither craters nor inflates a state. invert=true => low raw value ranks high.
-    function rankPct(field, invert){
-      var present=rows.filter(function(r){return r[field]!=null;});
-      var sorted=present.slice().sort(function(a,b){return a[field]-b[field];});
-      var n=sorted.length, pos={};
-      sorted.forEach(function(r,i){ pos[r.abbr]= n>1 ? (i/(n-1))*100 : 50; });
-      rows.forEach(function(r){
-        var p=(r[field]!=null)?pos[r.abbr]:50;
-        if(invert) p=100-p;
-        r['_'+field]=p;
-      });
-    }
-    rankPct('empG', false);
-    rankPct('popG', false);
-    rankPct('incG', false);
-    rankPct('uStress', true);
-
-    var W={empG:0.30, popG:0.30, incG:0.20, uStress:0.20};
-    var states=rows.map(function(r){
-      var score=r._empG*W.empG + r._popG*W.popG + r._incG*W.incG + r._uStress*W.uStress;
-      score=Math.round(Math.max(0,Math.min(100,score)));
-      // representative yoy for the change-view + scorecard: employment growth (strongest driver)
-      return { abbr:r.abbr, code:r.code, value:score, yoy:(r.empG!=null?r.empG:null), spark:[] };
-    });
-
-    SNAP.metrics.crehealth = { label:'CRE Health Score', unit:'', states:states };
-  }
-
   // ---- PRECOMPUTE DATA MODEL ----
   // The map reads ONE static file (data.json) generated periodically from FRED via
   // the build-map-data tool. No live FRED calls, no chunking, no subrequest cap, no
@@ -820,16 +748,6 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
         SNAP={generated:null, metrics:{}};
         ['hpi','unemp','income','permits'].forEach(function(m){ var s=sampleFor(m); SNAP.metrics[m]={label:(METRICS[m]||{}).label,states:s.states}; });
         SNAP_LOADED=true; setBadge(true,'sample');
-      }
-      computeCREHealth(); // no-op if employment/population aren't in the fallback data
-      // If the composite couldn't be built (saved/sample data lacks the inputs) but the
-      // user is on the CRE Health tab, fall back to House Prices so the map still renders.
-      if((!SNAP.metrics.crehealth || !SNAP.metrics.crehealth.states.length) && state.metric==='crehealth'){
-        state.metric='hpi';
-        var ct=document.querySelector('.mtab[data-metric="crehealth"]');
-        var ht=document.querySelector('.mtab[data-metric="hpi"]');
-        if(ct) ct.setAttribute('aria-selected','false');
-        if(ht) ht.setAttribute('aria-selected','true');
       }
     }
     // build a lookup of embedded sparklines: metric -> abbr -> spark[]
@@ -856,7 +774,7 @@ var EMBEDDED_DATA = {"generated":"2026-06-26T19:02:10.519Z","source":"FRED via s
             if(s && (!s.spark || !s.spark.length) && sparks[m] && sparks[m][s.abbr]) s.spark=sparks[m][s.abbr];
           });
         });
-        SNAP=d; SNAP_LOADED=true; computeCREHealth(); setBadge(false);
+        SNAP=d; SNAP_LOADED=true; setBadge(false);
       })
       .catch(function(e){ useEmbedded((e&&e.message)||'live fetch failed'); });
   }
